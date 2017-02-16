@@ -15,12 +15,38 @@ class Lexer
     private var data:String;
     private var c:String;
 
+    private var optable:Map<String, String> = [
+        '+' => "PLUS",
+        '-' => "MINUS",
+        '*' => "MULTIPLY",
+        '/' => "DIVIDE",
+        '=' => "EQUALS",
+        '{' => "L_BRACE",
+        '}' => "R_BRACE",
+        '[' => "L_BRACKET",
+        ']' => "R_BRACKET",
+        '(' => "L_PAREN",
+        ')' => "R_PAREN",
+        '<' => "L_ANGLE",
+        '>' => "R_ANGLE",
+        '"' => "DOUBLE_QUOTE",
+        "'" => "SINGLE_QUOTE",
+        '.' => "PERIOD",
+        '#' => "POUND",
+        '|' => "PIPE",
+        '!' => "EXCLAMATION",
+        '?' => "QUESTION",
+        '&' => "AMPERSAND",
+        ':' => "COLON",
+        ';' => "SEMICOLON"
+    ];
+
     public function new(data:String)
     {
         this.data = data;
         this.pos = 0;
         this.line = 1;
-        this.line_pos = 0;
+        this.line_pos = 1;
         this.c = data.charAt(pos);
     }
 
@@ -51,16 +77,17 @@ class Lexer
         {
             if (append) { buf = buf + c; }
             pos += 1;
-            c = data.charAt(pos);
+            line_pos += 1;
+            c = data.charAt(pos); 
         }
 
-        function token(type:String, lexeme:String)
+        function token(type:String, lexeme:String, pos:Int)
         {
             return {
                 type: type, 
                 lexeme: lexeme, 
                 line: line, 
-                pos: line_pos
+                pos: pos
             };
         }
 
@@ -79,14 +106,31 @@ class Lexer
             return c == '' || c == null;
         }
 
+        function isAlpha(c:String)
+        {
+            return (c >= 'a' && c <= 'z') ||
+                   (c >= 'A' && c <= 'Z') ||
+                   (c == '_' || c == '$'); 
+        }
+
+        function isNumeric(c:String)
+        {
+            return c >= '0' && c <= '9';
+        }
+
+        function isAlphanumeric(c:String)
+        {
+            return isNumeric(c) || isAlpha(c);
+        }
+
         if (isSpace(c))
         {
-            while(isSpace(c))
+            while (isSpace(c))
             {
                 if (isTerminator(c))
                 {
                     line += 1;
-                    line_pos = 0;
+                    line_pos = 1;
                 }
                 advance(false);
             }
@@ -94,8 +138,8 @@ class Lexer
         
         if (c == '/')
         {
-            advance();
-            if (c == '/')
+            var next = data.charAt(pos + 1);
+            if (next == '/')
             {
                 advance();
                 // handle comment
@@ -103,8 +147,39 @@ class Lexer
                 {
                     advance();
                 }
-                t = token('COMMENT', buf);
+                t = token('COMMENT', buf, line_pos - buf.length);
             }
+            else
+            {
+                t = token(optable[c], c, line_pos - 1);
+                advance();
+            }
+        }
+        else if (isAlpha(c))
+        {
+            // identifier or reserved word:
+            while (isAlphanumeric(c))
+            {
+                advance();
+            }
+            t = token('IDENTIFIER', buf, line_pos - buf.length - 1);
+        }
+        else if (isNumeric(c))
+        {
+            //@@TODO: Add floating point, hex, etc support.
+            while (isNumeric(c))
+            {
+                advance();
+            }
+            t = token('INTEGER', buf, line_pos - buf.length - 1);
+        }
+        else 
+        {
+            if (optable.exists(c))
+            {
+                t = token(optable[c], c, line_pos - 1);
+            }
+            advance();
         }
 
         return t;
