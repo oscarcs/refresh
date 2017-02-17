@@ -16,29 +16,43 @@ class Lexer
     private var c:String;
 
     private var optable:Map<String, String> = [
-        '+' => "PLUS",
-        '-' => "MINUS",
+        '+' => "ADD",
+        '-' => "SUBTRACT",
         '*' => "MULTIPLY",
         '/' => "DIVIDE",
-        '=' => "EQUALS",
+        '%' => "MODULO",
+        '=' => "ASSIGN",
         '{' => "L_BRACE",
         '}' => "R_BRACE",
         '[' => "L_BRACKET",
         ']' => "R_BRACKET",
         '(' => "L_PAREN",
         ')' => "R_PAREN",
-        '<' => "L_ANGLE",
-        '>' => "R_ANGLE",
         '"' => "DOUBLE_QUOTE",
         "'" => "SINGLE_QUOTE",
         '.' => "PERIOD",
         '#' => "POUND",
-        '|' => "PIPE",
-        '!' => "EXCLAMATION",
         '?' => "QUESTION",
-        '&' => "AMPERSAND",
         ':' => "COLON",
-        ';' => "SEMICOLON"
+        ';' => "SEMICOLON",
+        '++' => "INCREMENT",
+        '--' => "DECREMENT",
+        '+=' => "ADD_ASSIGN",
+        '-=' => "SUBTRACT_ASSIGN",
+        '==' => "EQUALITY",
+        '!=' => "INEQUALITY",
+        '<' => "LESS_THAN",
+        '>' => "GREATER_THAN",
+        '>=' => "GREATER_OR_EQUAL",
+        '<=' => "LESS_OR_EQUAL",
+        '||' => "OR",
+        '&&' => "AND",
+        '!' => "NOT",
+        '|' => "BITWISE_OR",
+        '&' => "BITWISE_AND",
+        '~' => "COMPLEMENT",
+        '>>' => "L_SHIFT",
+        '<<' => "R_SHIFT"
     ];
 
     public function new(data:String)
@@ -175,7 +189,13 @@ class Lexer
         }
         else 
         {
-            if (optable.exists(c))
+            var next_two:String = c + data.charAt(pos + 1); 
+            if (optable.exists(next_two))
+            {
+                t = token(optable[next_two], next_two, line_pos - 1);
+                advance();
+            }
+            else if (optable.exists(c))
             {
                 t = token(optable[c], c, line_pos - 1);
             }
