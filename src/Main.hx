@@ -1,16 +1,23 @@
 package ;
 
+import Parser.Node;
+
 class Main
 {    
     static function main()
     {   
         // Override default trace function.
         var _trace = haxe.Log.trace;
+
         haxe.Log.trace = function(v:Dynamic, ?info:haxe.PosInfos) 
         {    
             if (v == null)
             {
                 _trace('null', null);
+            }
+            else if (Std.is(v, Node))
+            {
+                _trace(stringifyNodeRecurse(v), null);
             }
             else
             {
@@ -23,7 +30,43 @@ class Main
         var tokens = lexer.lex();
         for (token in tokens)
         {
-            trace('Line ${token.line}, pos ${token.pos}: ${token.type} (${token.lexeme})');
+            trace('Ln ${token.line}, Col ${token.pos}: ${token.type} (${token.lexeme})');
         }
+        
+        trace('');
+
+        var parser = new Parser(tokens);
+        var root = parser.parse();
+        trace (root);
+    }
+
+    static function stringifyNodeRecurse(root:Node):String
+    {
+        var str = "";
+        var indentLevel = 0;
+
+        var nodes:Array<Node> = [root];
+        while (nodes.length > 0)
+        {
+            var cur = nodes.shift();
+
+            // prepend the current children
+            nodes = cur.children.concat(nodes);
+
+            var indentStr = '';
+            for (i in 0...indentLevel) indentStr += '    ';
+            str += indentStr + stringifyNode(cur);
+            str += "\n";
+
+            if (!cur.hasChildren() && cur.isLastChild()) indentLevel--;
+            if (cur.hasChildren()) indentLevel++;
+        }
+
+        return str;
+    }
+
+    static function stringifyNode(node:Node)
+    {
+        return node.value;
     }
 }
