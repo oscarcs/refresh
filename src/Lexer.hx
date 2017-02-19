@@ -73,6 +73,14 @@ class Lexer
             if (token == null) break;
             tokens.push(token);
         }
+
+        tokens.push({
+            type: "END",
+            lexeme: "END",
+            line: 0,
+            pos: 0
+        });
+        
         return tokens;
     }
 
