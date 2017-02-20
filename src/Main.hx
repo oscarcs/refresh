@@ -67,6 +67,8 @@ class Main
 
     static function stringifyNode(node:Node)
     {
-        return node.value;
+        var className:String = Type.getClassName(Type.getClass(node));
+        var plural = node.children.length == 1 ? 'child' : 'children';
+        return '${node.value} (${className}, ${node.children.length} ${plural})';
     }
 }
