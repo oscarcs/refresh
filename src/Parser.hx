@@ -22,7 +22,7 @@ class Node
     {
         if (this.parent != null)
         {
-            return this.parent.children[this.parent.children.length] == this;
+            return this.parent.children[this.parent.children.length - 1] == this;
         }
         return true;
     }
@@ -86,6 +86,7 @@ class Parser
 
     private var prefixFuncs = new Map<String, Parselet>();
     private var infixFuncs = new Map<String, Parselet>();
+    private var precedenceTable = new Map<String, Int>();
 
     public function new(tokens:Array<Token>) 
     {
@@ -97,24 +98,25 @@ class Parser
             function(token:Token, left:Node) { 
                 return new IdentNode(token.lexeme);
             }, 
-            "none"
+            "none",
+            0
         );
-        registerPrefix("ADD");
-        registerPrefix("SUBTRACT");
-        registerPrefix("COMPLEMENT");
-        registerPrefix("NOT");
-        registerInfix("ADD");
-        registerInfix("SUBTRACT");
-        registerInfix("MULTIPLY");
-        registerInfix("DIVIDE");
+        registerPrefix("ADD", 60);
+        registerPrefix("SUBTRACT", 60);
+        registerPrefix("COMPLEMENT", 60);
+        registerPrefix("NOT", 60);
+        registerInfix("ADD", 30);
+        registerInfix("SUBTRACT", 30);
+        registerInfix("MULTIPLY", 40);
+        registerInfix("DIVIDE", 40);
     }
 
     public function parse():Node
     {
-        return expression();
+        return expression(0);
     }
 
-    private function register(type:String, f:Parselet, affix:String)
+    private function register(type:String, f:Parselet, affix:String, precedence:Int)
     {
         if (affix == "infix")
         {
@@ -124,33 +126,39 @@ class Parser
         {
             prefixFuncs[type] = f;
         }
+        this.precedenceTable[type] = precedence;
     }
 
-    private function registerPrefix(type:String)
+    private function registerPrefix(type:String, precedence:Int)
     {  
-        var f = function(token:Token, left:Node) {
-            var operand:Node = expression();
+        var f = function(token:Token, left:Node)
+        {
+            var precedence = this.precedenceTable[token.type];
+            var operand:Node = expression(precedence);
             return new PrefixNode(token.type, operand);
         };
-        register(type, f, "prefix");
+        register(type, f, "prefix", precedence);
     }
 
-    private function registerInfix(type:String)
+    private function registerInfix(type:String, precedence:Int)
     {
-        var f = function(token:Token, left:Node) {
-            var right = expression();
+        var f = function(token:Token, left:Node)
+        {
+            var precedence = this.precedenceTable[token.type];
+            var right:Node = expression(precedence);
             return new InfixNode(token.type, left, right);
         };
-        register(type, f, "infix");
+        register(type, f, "infix", precedence);
     }
 
-    private function registerPostfix(type:String)
+    private function registerPostfix(type:String, precedence:Int)
     {
-        var f = function(token:Token, left:Node) {
+        var f = function(token:Token, left:Node)
+        {
             return new PostfixNode(token.type, left);
         };
         // postfix ops are actually 'infix':
-        register(type, f, "infix");
+        register(type, f, "infix", precedence);
     }
 
     private function advance()
@@ -164,7 +172,7 @@ class Parser
         return tokens[pos + 1];
     }
 
-    private function expression():Node
+    private function expression(precedence:Int):Node
     {
         advance();
         if (prefixFuncs.exists(c.type))
@@ -173,25 +181,33 @@ class Parser
 
             var left = prefix(c, null);
 
-            var token = lookahead();
-
-            if (infixFuncs.exists(token.type))
+            trace(c.type + ", " + precedence + ", " + getPrecedence());
+            while (precedence < getPrecedence())
             {
-                var infix = infixFuncs[token.type];
-                
                 advance();
-                return infix(token, left);
+                var infix = infixFuncs[c.type];
+                if (infix == null)
+                {
+                    break;
+                }
+                else
+                {
+                    left = infix(c, left);
+                }
             }
-            else 
-            {
-                return left;
-            }
-        }
-        else
-        {
-            return null;
-        }
 
+            trace(left.value + ' (${left.children.length})');
+            return left;
+        }
         return null;
+    }
+
+    private function getPrecedence()
+    {
+        if (this.precedenceTable.exists(lookahead().type))
+        {
+            return this.precedenceTable[lookahead().type];
+        }
+        return 0;
     }
 }
