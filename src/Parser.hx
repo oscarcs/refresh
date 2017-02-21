@@ -92,7 +92,7 @@ class Parser
     {
         this.tokens = tokens;
 
-        // register the grammar:
+        // register identifier type:
         register(
             "IDENTIFIER",
             function(token:Token, left:Node) { 
@@ -101,14 +101,22 @@ class Parser
             "none",
             0
         );
+
+        // simple prefix operators:
         registerPrefix("ADD", 60);
         registerPrefix("SUBTRACT", 60);
         registerPrefix("COMPLEMENT", 60);
         registerPrefix("NOT", 60);
+
+        // simple infix operators:
         registerInfix("ADD", 30);
         registerInfix("SUBTRACT", 30);
         registerInfix("MULTIPLY", 40);
         registerInfix("DIVIDE", 40);
+
+        // simple postfix operators:
+        registerPostfix("INCREMENT", 70);
+        registerPostfix("DECREMENT", 70);
     }
 
     public function parse():Node
@@ -126,6 +134,8 @@ class Parser
         {
             prefixFuncs[type] = f;
         }
+
+        // register the precedence of this token type:
         this.precedenceTable[type] = precedence;
     }
 
@@ -146,6 +156,8 @@ class Parser
         {
             var precedence = this.precedenceTable[token.type];
             var right:Node = expression(precedence);
+        
+            // return AST node with two children:
             return new InfixNode(token.type, left, right);
         };
         register(type, f, "infix", precedence);
@@ -157,7 +169,7 @@ class Parser
         {
             return new PostfixNode(token.type, left);
         };
-        // postfix ops are actually 'infix':
+        // postfix ops are actually 'infix', i.e not 'prefix':
         register(type, f, "infix", precedence);
     }
 
@@ -181,7 +193,8 @@ class Parser
 
             var left = prefix(c, null);
 
-            trace(c.type + ", " + precedence + ", " + getPrecedence());
+            // continue consuming tokens while the next token
+            // has greater precedence than the current token 'c'.
             while (precedence < getPrecedence())
             {
                 advance();
@@ -196,12 +209,12 @@ class Parser
                 }
             }
 
-            trace(left.value + ' (${left.children.length})');
             return left;
         }
         return null;
     }
 
+    // get the precedence of the next token:
     private function getPrecedence()
     {
         if (this.precedenceTable.exists(lookahead().type))
