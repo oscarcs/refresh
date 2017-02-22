@@ -36,6 +36,30 @@ class IdentNode extends Node
     }
 }
 
+class IntNode extends Node
+{
+    override public function new(value:String)
+    {
+        super(value);
+    }
+}
+
+class AssignNode extends Node
+{
+    public var left:Node;
+    public var right:Node;
+    override public function new(value:String, left:Node, right:Node)
+    {
+        super(value);
+        this.children.push(left);
+        this.children.push(right);
+        this.left = this.children[0];
+        this.right = this.children[1];
+        this.left.parent = this;
+        this.right.parent = this;   
+    }
+}
+
 class PrefixNode extends Node
 {
     public var child:Node;
@@ -102,6 +126,44 @@ class Parser
             0
         );
 
+        // register integer literal type:
+        register(
+            "INTEGER",
+            function(token:Token, left:Node) { 
+                return new IntNode(token.lexeme);
+            }, 
+            "none",
+            0
+        );
+
+        // register grouping parens:
+        register(
+            "L_PAREN",
+            function(token:Token, left:Node) {
+                var expression = expression(0);
+                advance("R_PAREN");
+                return expression;
+            },
+            "prefix",
+            60
+        );
+
+        register(
+            "ASSIGN",
+            function(token:Token, left:Node) {
+                var right = expression(10 - 1);
+                if (!Std.is(left, IdentNode))
+                {
+                    //@@ERROR
+                    trace('The left-hand side of an assignment must be an identifier');
+                }
+                var name = left.value;
+                return new AssignNode(name, left, right);
+            },
+            "infix",
+            10
+        );
+
         // simple prefix operators:
         registerPrefix("ADD", 60);
         registerPrefix("SUBTRACT", 60);
@@ -156,7 +218,6 @@ class Parser
         {
             var precedence = this.precedenceTable[token.type];
             var right:Node = expression(precedence);
-        
             // return AST node with two children:
             return new InfixNode(token.type, left, right);
         };
@@ -173,10 +234,18 @@ class Parser
         register(type, f, "infix", precedence);
     }
 
-    private function advance()
+    private function advance(?expect:String=null)
     {
         pos += 1;
         c = tokens[pos];
+        if (expect != null)
+        {
+            if (c.type != expect)
+            {
+                //@@ERROR
+                trace('Expected ${expect}, but got ${c.type}');
+            }
+        }
     }
 
     private function lookahead()
