@@ -100,6 +100,22 @@ class PostfixNode extends Node
     }
 }
 
+class CallNode extends Node
+{
+    public var name:Node;
+    override public function new(name:Node, args:Array<Node>)
+    {
+        super(name.value);
+        children.push(name);
+        name.parent = this;
+        for (arg in args)
+        {
+            children.push(arg);
+            arg.parent = this;
+        }
+    }
+}
+
 typedef Parselet = Token->Node->Node;
 
 class Parser
@@ -146,6 +162,27 @@ class Parser
             },
             "prefix",
             60
+        );
+
+        // register function-calling parens:
+        register(
+            "L_PAREN",
+            function(token:Token, left:Node) {
+                var args:Array<Node> = [];
+                if (lookahead().type != "R_PAREN")
+                {
+                    while (true)
+                    {
+                        args.push(expression(0));
+                        if (lookahead().type != "COMMA") break;
+                        advance();
+                    }
+                    advance("R_PAREN");
+                }
+                return new CallNode(left, args);
+            },
+            "infix",
+            80
         );
 
         register(
