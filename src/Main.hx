@@ -44,23 +44,27 @@ class Main
     static function stringifyNodeRecurse(root:Node):String
     {
         var str = "";
-        var indentLevel = 0;
 
         var nodes:Array<Node> = [root];
+        var depths:Array<Int> = [0];
         while (nodes.length > 0)
         {
             var cur = nodes.shift();
+            var curDepth = depths.shift();
 
-            // prepend the current children
+            // prepend the current children:
             nodes = cur.children.concat(nodes);
+            
+            // update the virtual indent queue:
+            for (i in cur.children)
+            {
+                depths.unshift(curDepth + 1);
+            }
 
-            var indentStr = '';
-            for (i in 0...indentLevel) indentStr += '    ';
-            str += indentStr + stringifyNode(cur);
+            var indent = '';
+            for (i in 0...curDepth) indent += '    ';
+            str += indent + stringifyNode(cur);
             str += "\n";
-
-            if (!cur.hasChildren() && cur.isLastChild()) indentLevel--;
-            if (cur.hasChildren()) indentLevel++;
         }
 
         return str;
