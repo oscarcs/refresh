@@ -1,6 +1,7 @@
 package ;
 
-import Parser.Node;
+import Parser;
+import Node;
 
 class Main
 {    
