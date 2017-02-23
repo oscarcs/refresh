@@ -31,6 +31,7 @@ class Lexer
         '"' => "DOUBLE_QUOTE",
         "'" => "SINGLE_QUOTE",
         '.' => "PERIOD",
+        ',' => "COMMA",
         '#' => "POUND",
         '?' => "QUESTION",
         ':' => "COLON",
