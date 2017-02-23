@@ -113,3 +113,17 @@ class CallNode extends Node
         }
     }
 }
+
+class BlockNode extends Node
+{
+    override public function new(statements:Array<Node>)
+    {
+        super("BLOCK");
+        for (statement in statements)
+        {
+            children.push(statement);
+            statement.parent = this;
+        }
+
+    }
+}

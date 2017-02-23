@@ -107,7 +107,7 @@ class Parser
 
     public function parse():Node
     {
-        return expression(0);
+        return block();
     }
 
     private function register(type:String, f:Parselet, affix:String, precedence:Int)
@@ -177,6 +177,34 @@ class Parser
         return tokens[pos + 1];
     }
 
+    // get the precedence of the next token:
+    private function getPrecedence()
+    {
+        if (this.precedenceTable.exists(lookahead().type))
+        {
+            return this.precedenceTable[lookahead().type];
+        }
+        return 0;
+    }
+
+    private function block():Node
+    {
+        advance("L_BRACE");
+        var statements:Array<Node> = [];
+        while (lookahead().type != "R_BRACE")
+        {
+            statements.push(statement());
+        }
+        return new BlockNode(statements);
+    }
+
+    private function statement():Node
+    {
+        var expr:Node = expression(0);
+        advance("SEMICOLON");
+        return expr;
+    }
+
     private function expression(precedence:Int):Node
     {
         advance();
@@ -205,15 +233,5 @@ class Parser
             return left;
         }
         return null;
-    }
-
-    // get the precedence of the next token:
-    private function getPrecedence()
-    {
-        if (this.precedenceTable.exists(lookahead().type))
-        {
-            return this.precedenceTable[lookahead().type];
-        }
-        return 0;
     }
 }
