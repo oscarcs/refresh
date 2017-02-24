@@ -200,9 +200,16 @@ class Parser
 
     private function statement():Node
     {
-        var expr:Node = expression(0);
-        advance("SEMICOLON");
-        return expr;
+        var node:Node;
+        switch(lookahead().type)
+        {
+            case "L_BRACE":
+                node = block();
+            default:
+                node = expression(0);
+                advance("SEMICOLON");
+        }
+        return node;
     }
 
     private function expression(precedence:Int):Node
