@@ -81,6 +81,7 @@ class Parser
                     //@@ERROR
                     trace('The left-hand side of an assignment must be an identifier');
                 }
+                //@@TODO: check whether the left hand side is valid and declared.
                 var name = left.value;
                 return new AssignNode(name, left, right);
             },
@@ -103,11 +104,6 @@ class Parser
         // simple postfix operators:
         registerPostfix("INCREMENT", 70);
         registerPostfix("DECREMENT", 70);
-    }
-
-    public function parse():Node
-    {
-        return block();
     }
 
     private function register(type:String, f:Parselet, affix:String, precedence:Int)
@@ -187,6 +183,25 @@ class Parser
         return 0;
     }
 
+    public function parse():Node
+    {
+        return program();
+    }
+
+    // consisting of "statement-list END":
+    private function program():Node
+    {
+        var nodes:Array<Node> = [];
+        var node:Node = null;
+        while (lookahead() != null && lookahead().type != "END")
+        {
+            node = statement();
+            nodes.push(node);
+        };
+        return new RootNode(nodes);
+    }
+
+    // consisting of "{ statement-list }":
     private function block():Node
     {
         advance("L_BRACE");
@@ -198,18 +213,40 @@ class Parser
         return new BlockNode(statements);
     }
 
+    // consisting of "block | declaration | expression":
     private function statement():Node
     {
-        var node:Node;
-        switch(lookahead().type)
+        var node:Node = null;
+        if (lookahead().type == "L_BRACE")
         {
-            case "L_BRACE":
-                node = block();
-            default:
-                node = expression(0);
-                advance("SEMICOLON");
+            node = block();
+            advance("R_BRACE");
+        }
+        else if (lookahead().type == "IDENTIFIER")
+        {
+            node = expression(0);
+            advance("SEMICOLON");
+        }   
+        else if (lookahead().type == "DECLARATION")
+        {
+            node = declaration();
+            advance("SEMICOLON");
+        }
+        else
+        {
+            //@@ERROR
+            throw 'Invalid statement, can\'t start with ${lookahead().type}';
         }
         return node;
+    }
+
+    // consistion of 'let identifier = expression':
+    private function declaration():Node
+    {
+        advance("DECLARATION");
+        //@@TODO: add to symtab
+        var expr = expression(0);
+        return expr;
     }
 
     private function expression(precedence:Int):Node

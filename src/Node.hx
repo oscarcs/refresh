@@ -26,6 +26,19 @@ class Node
     }
 }
 
+class RootNode extends Node
+{
+    override public function new(nodes:Array<Node>)
+    {
+        super("ROOT");
+        for (node in nodes)
+        {
+            children.push(node);
+            node.parent = this;
+        }
+    }
+}
+
 class IdentNode extends Node
 {
     override public function new(value:String)
@@ -124,6 +137,5 @@ class BlockNode extends Node
             children.push(statement);
             statement.parent = this;
         }
-
     }
 }

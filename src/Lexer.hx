@@ -56,6 +56,10 @@ class Lexer
         '<<' => "R_SHIFT"
     ];
 
+    private var reservedtable:Map<String, String> = [
+        'let' => "DECLARATION"
+    ];
+
     public function new(data:String)
     {
         this.data = data;
@@ -185,7 +189,15 @@ class Lexer
             {
                 advance();
             }
-            t = token('IDENTIFIER', buf, line_pos - buf.length - 1);
+            
+            if (reservedtable.exists(buf))
+            {
+                t = token(reservedtable[buf], buf, line_pos - buf.length - 1);
+            }
+            else
+            {
+                t = token('IDENTIFIER', buf, line_pos - buf.length - 1);
+            }
         }
         else if (isNumeric(c))
         {
