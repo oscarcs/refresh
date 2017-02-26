@@ -208,6 +208,18 @@ class Lexer
             }
             t = token('INTEGER', buf, line_pos - buf.length - 1);
         }
+        else if (c == "'" || c == '"')
+        {
+            // only match quotes of the same type
+            var opening = c;
+            advance();
+            while (c != opening)
+            {
+                advance();
+            }
+            advance();
+            t = token('STRING_LITERAL', buf, line_pos - buf.length - 1);
+        }
         else 
         {
             var next_two:String = c + data.charAt(pos + 1); 
