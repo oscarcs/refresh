@@ -39,6 +39,17 @@ class Parser
             0
         );
 
+        // register string literal type:
+        register(
+            "STRING",
+            function(token:Token, left:Node) {
+                var value = token.lexeme.substring(1, token.lexeme.length - 1);
+                return new StringNode(value);
+            },
+            "none",
+            0
+        );
+
         // register grouping parens:
         register(
             "L_PAREN",

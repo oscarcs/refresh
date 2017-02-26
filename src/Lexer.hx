@@ -212,13 +212,18 @@ class Lexer
         {
             // only match quotes of the same type
             var opening = c;
+            var last = c;
             advance();
-            while (c != opening)
+            while (true)
             {
+                if (c == opening && last != '\\') break;
+                //@@ERROR: no matching quote
+                if (c == "" || c == null) break;
+                last = c;
                 advance();
             }
             advance();
-            t = token('STRING_LITERAL', buf, line_pos - buf.length - 1);
+            t = token('STRING', buf, line_pos - buf.length - 1);
         }
         else 
         {

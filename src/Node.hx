@@ -55,6 +55,14 @@ class IntNode extends Node
     }
 }
 
+class StringNode extends Node
+{
+    override public function new(value:String)
+    {
+        super(value);
+    }
+}
+
 class AssignNode extends Node
 {
     public var left:Node;
