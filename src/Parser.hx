@@ -4,6 +4,9 @@ import Lexer;
 import Node;
 
 typedef Parselet = Token->Node->Node;
+typedef Symbol = {
+    var type:String;
+};
 
 class Parser
 {
@@ -14,6 +17,8 @@ class Parser
     private var prefixFuncs = new Map<String, Parselet>();
     private var infixFuncs = new Map<String, Parselet>();
     private var precedenceTable = new Map<String, Int>();
+
+    private var symbols = new Map<String, Symbol>();
 
     public function new(tokens:Array<Token>) 
     {
@@ -92,7 +97,7 @@ class Parser
                     //@@ERROR
                     trace('The left-hand side of an assignment must be an identifier');
                 }
-                //@@TODO: check whether the left hand side is valid and declared.
+                //@@TODO: check whether the left hand side is valid.
                 var name = left.value;
                 return new AssignNode(name, left, right);
             },
@@ -248,6 +253,18 @@ class Parser
             //@@ERROR
             throw 'Invalid statement, can\'t start with ${lookahead().type}';
         }
+
+        // check symbol table if we just parsed an assignment:
+        if (Std.is(node, AssignNode))
+        {
+            cast(node, AssignNode);
+            if (!symbols.exists(node.value)) 
+            {
+                //@@ERROR: undefined variable
+                throw 'Undefined variable "${node.value}" cannot be assigned to.';
+            }
+        }
+
         return node;
     }
 
@@ -255,8 +272,11 @@ class Parser
     private function declaration():Node
     {
         advance("DECLARATION");
-        //@@TODO: add to symtab
         var expr = expression(0);
+
+        // add to symbol table:
+        symbols[expr.value] = { type:"DYNAMIC" };
+
         return expr;
     }
 
