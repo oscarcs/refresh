@@ -38,7 +38,14 @@ class Main
 
         var parser = new Parser(tokens);
         var root = parser.parse();
-        trace (root);
+        trace(root);
+        
+        var outPath = "test/out.js";
+        trace('_______ \'${outPath}\': ________________________________________');
+
+        var generator = new backends.JSGenerator(root, outPath);
+        var output = generator.generate();
+        trace(output);
     }
 
     static function stringifyNodeRecurse(root:Node):String
