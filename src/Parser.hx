@@ -172,8 +172,15 @@ class Parser
 
     private function advance(?expect:String=null)
     {
-        pos += 1;
+        pos++;
         c = tokens[pos];
+        // skip comment tokens (which we leave in for debugging):
+        while (c != null && c.type == 'COMMENT')
+        {
+            pos++;
+            c = tokens[pos];
+        }
+
         if (expect != null)
         {
             if (c.type != expect)
@@ -186,7 +193,15 @@ class Parser
 
     private function lookahead()
     {
-        return tokens[pos + 1];
+        var next_pos = pos + 1;
+        var next = tokens[next_pos];
+        // skip comment tokens (which we leave in for debugging):
+        while (next != null && next.type == 'COMMENT')
+        {
+            next_pos++;
+            next = tokens[next_pos];
+        }
+        return next;
     }
 
     // get the precedence of the next token:
