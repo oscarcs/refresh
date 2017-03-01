@@ -88,22 +88,20 @@ class Parser
             80
         );
 
-        register(
-            "ASSIGN",
-            function(token:Token, left:Node) {
-                var right = expression(10 - 1);
-                if (!Std.is(left, IdentNode))
-                {
-                    //@@ERROR
-                    trace('The left-hand side of an assignment must be an identifier');
-                }
-                //@@TODO: check whether the left hand side is valid.
-                var name = left.value;
-                return new AssignNode(name, left, right);
-            },
-            "infix",
-            10
-        );
+        var assign = function(token:Token, left:Node) {
+            var right = expression(10 - 1);
+            if (!Std.is(left, IdentNode))
+            {
+                //@@ERROR
+                trace('The left-hand side of an assignment must be an identifier');
+            }
+            //@@TODO: check whether the left hand side is valid.
+            return new AssignNode(token.type, left, right);
+        }
+
+        register("ASSIGN", assign, "infix", 10);
+        register("ADD_ASSIGN", assign, "infix", 10);
+        register("SUBTRACT_ASSIGN", assign, "infix", 10);
 
         // simple prefix operators:
         registerPrefix("ADD", 60);
@@ -272,11 +270,11 @@ class Parser
         // check symbol table if we just parsed an assignment:
         if (Std.is(node, AssignNode))
         {
-            cast(node, AssignNode);
-            if (!symbols.exists(node.value)) 
+            var n = cast(node, AssignNode);
+            if (!symbols.exists(n.left.value)) 
             {
                 //@@ERROR: undefined variable
-                throw 'Undefined variable "${node.value}" cannot be assigned to.';
+                throw 'Undefined variable "${n.left.value}" cannot be assigned to.';
             }
         }
 
@@ -290,7 +288,8 @@ class Parser
         var expr = expression(0);
 
         // add to symbol table:
-        symbols[expr.value] = { type:"DYNAMIC" };
+        var n = cast(expr, AssignNode);
+        symbols[n.left.value] = { type:"DYNAMIC" };
 
         return expr;
     }
