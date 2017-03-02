@@ -57,7 +57,9 @@ class Lexer
     ];
 
     private var reservedtable:Map<String, String> = [
-        'let' => "DECLARATION"
+        'let' => "DECLARATION",
+        'for' => "FOR",
+        'while' => "WHILE"
     ];
 
     public function new(data:String)

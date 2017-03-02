@@ -230,18 +230,6 @@ class Parser
         return new RootNode(nodes);
     }
 
-    // consisting of "{ statement-list }":
-    private function block():Node
-    {
-        advance("L_BRACE");
-        var statements:Array<Node> = [];
-        while (lookahead().type != "R_BRACE")
-        {
-            statements.push(statement());
-        }
-        return new BlockNode(statements);
-    }
-
     // consisting of "block | declaration | expression":
     private function statement():Node
     {
@@ -260,6 +248,11 @@ class Parser
         {
             node = declaration();
             advance("SEMICOLON");
+        }
+        else if (lookahead().type == "WHILE")
+        {
+            node = whileLoop();
+            advance();
         }
         else
         {
@@ -281,6 +274,18 @@ class Parser
         return node;
     }
 
+    // consisting of "{ statement-list }":
+    private function block():Node
+    {
+        advance("L_BRACE");
+        var statements:Array<Node> = [];
+        while (lookahead().type != "R_BRACE")
+        {
+            statements.push(statement());
+        }
+        return new BlockNode(statements);
+    }
+
     // consistion of 'let identifier = expression':
     private function declaration():Node
     {
@@ -292,6 +297,18 @@ class Parser
         symbols[n.left.value] = { type:"DYNAMIC" };
 
         return expr;
+    }
+
+    private function whileLoop():Node
+    {
+        advance("WHILE");
+        advance("L_PAREN");
+        var condition = expression(0);
+        trace(condition);
+        advance("R_PAREN");
+        var body = block().children;
+
+        return new WhileNode(condition, body);
     }
 
     private function expression(precedence:Int):Node
