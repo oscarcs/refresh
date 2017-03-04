@@ -60,6 +60,18 @@ class JSGenerator implements IGenerator
             case IntNode:
                 var n = cast(node, IntNode);
                 str += n.value + '';
+
+            case WhileNode:
+                var n = cast(node, WhileNode);
+                str += 'while (${generateNode(n.condition)}) {\n';
+                for (child in n.body) {
+                    str += '${generateNode(child)}\n';
+                }
+                str += '\n}';
+
+            case InfixNode:
+                var n = cast(node, InfixNode);
+                str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
         }
 
         return str;
