@@ -122,6 +122,12 @@ class Parser
         registerInfix("GREATER_OR_EQUAL", 55);
         registerInfix("EQUALITY", 55);
         registerInfix("INEQUALITY", 55);
+        registerInfix("LESS_THAN", 55);
+        registerInfix("GREATER_THAN", 55);
+        registerInfix("LESS_OR_EQUAL", 55);
+        registerInfix("GREATER_OR_EQUAL", 55);
+        registerInfix("OR", 55);
+        registerInfix("AND", 55);
 
         // simple postfix operators:
         registerPostfix("INCREMENT", 70);

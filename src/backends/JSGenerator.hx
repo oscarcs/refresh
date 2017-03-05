@@ -10,9 +10,17 @@ class JSGenerator implements IGenerator
 
     private var symbols = new Map<String, Symbol>();
     private var operators:Map<String, String> = [
-        'ASSIGN' => '=',
-        'ADD_ASSIGN' => '+=',
-        'SUBTRACT_ASSIGN' => '-='
+        "ASSIGN" => '=',
+        "ADD_ASSIGN" => '+=',
+        "SUBTRACT_ASSIGN" => '-=',
+        "EQUALITY" => '==',
+        "INEQUALITY" => '!=',
+        "LESS_THAN" => '<',
+        "GREATER_THAN" => '>',
+        "GREATER_OR_EQUAL" => '>=',
+        "LESS_OR_EQUAL" => '<=',
+        "OR" => '||',
+        "AND" => '&&'
     ];
 
     public function new(rootNode:Node, outputPath:String)
