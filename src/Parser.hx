@@ -268,6 +268,11 @@ class Parser
             node = whileLoop();
             advance();
         }
+        else if (lookahead().type == "IF")
+        {
+            node = ifStatement();
+            advance();
+        }
         else
         {
             //@@ERROR
@@ -318,11 +323,23 @@ class Parser
         advance("WHILE");
         advance("L_PAREN");
         var condition = expression(0);
-        trace(condition);
         advance("R_PAREN");
+        
         var body = block().children;
 
         return new WhileNode(condition, body);
+    }
+
+    private function ifStatement():Node
+    {
+        advance("IF");
+        advance("L_PAREN");
+        var condition = expression(0);
+        advance("R_PAREN");
+        
+        var body = block().children;
+
+        return new IfNode(condition, body);
     }
 
     private function expression(precedence:Int):Node

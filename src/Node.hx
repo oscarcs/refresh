@@ -168,3 +168,24 @@ class WhileNode extends Node
         }
     }
 }
+
+class IfNode extends Node
+{
+    public var condition:Node;
+    public var body:Array<Node> = [];
+    override public function new(condition:Node, statements:Array<Node>)
+    {
+        super("IF");
+        
+        this.condition = condition;
+        children.push(this.condition);
+        this.condition.parent = this;
+
+        for (statement in statements)
+        {
+            body.push(statement);
+            children.push(statement);
+            statement.parent = this;
+        }
+    }
+}

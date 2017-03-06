@@ -77,6 +77,14 @@ class JSGenerator implements IGenerator
                 }
                 str += '\n}';
 
+            case IfNode:
+                var n = cast(node, IfNode);
+                str += 'if (${generateNode(n.condition)}) {\n';
+                for (child in n.body) {
+                    str += '${generateNode(child)}\n';
+                }
+                str += '\n}';            
+
             case InfixNode:
                 var n = cast(node, InfixNode);
                 str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
