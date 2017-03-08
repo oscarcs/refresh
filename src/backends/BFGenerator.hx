@@ -49,7 +49,6 @@ class BFGenerator implements IGenerator
             case RootNode:
                 var n = cast(node, RootNode);
                 str += n.children.map(generateNode).join('\n');
-                str += '.';
 
             case AssignNode:
                 var n = cast(node, AssignNode);
@@ -137,7 +136,6 @@ class BFGenerator implements IGenerator
                 var left = symbols[node.left.value].start;
                 var right = symbols[n.value].start;
                 var temp = 0;
-                str += '\n';
                 str += emitClear(temp);
                 str += emitClear(left);
                 // right[left+temp+right-]
