@@ -49,31 +49,33 @@ class BFGenerator implements IGenerator
             case RootNode:
                 var n = cast(node, RootNode);
                 str += n.children.map(generateNode).join('\n');
+                str += '.';
 
             case AssignNode:
                 var n = cast(node, AssignNode);
-                dataLast++; // get the next data slot.
-                str += emitCellMove(dataLast);
                 // add the symbol:
                 //@@TODO: type checking so we can do strings
-                symbols[n.left.value] = {start:dataLast, length:1};
+                if (!symbols.exists(n.left.value))
+                {
+                    dataLast++; // get the next data slot.
+                    symbols[n.left.value] = {start:dataLast, length:1};
+                }
+                str += emitMove(dataLast);
+                str += emitAssignment(n);
 
             case IdentNode:
                 var n = cast(node, IdentNode);
+                str += emitMove(symbols[n.value].start);
 
             case InfixNode:
                 var n = cast(node, InfixNode);
-                str += emitInfix(n.value);
-
-            case IntNode:
-                var n = cast(node, IntNode);
-                str += emitValue(Std.parseInt(n.value));
+                str += emitInfix(n);
         }
 
         return str;
     }
 
-    private function emitCellMove(cell:Int):String
+    private function emitMove(cell:Int):String
     {
         var str:String = '';
         if (currentCell > cell)
@@ -90,6 +92,7 @@ class BFGenerator implements IGenerator
                 str += '>';
             }
         }
+        currentCell = cell;
         return str;
     }
 
@@ -113,18 +116,53 @@ class BFGenerator implements IGenerator
         return str;
     }
 
-    private function emitInfix(type:String):String
+    private function emitClear(cell:Int):String
+    {
+        // assumes wrapping implementation:
+        return '${emitMove(cell)}[-]\n';
+    }
+
+    private function emitAssignment(node:AssignNode):String
     {
         var str = '';
+        switch(Type.getClass(node.right))
+        {
+            case IntNode:
+                var n = cast(node.right, IntNode);
+                str += emitMove(symbols[node.left.value].start);
+                str += emitValue(Std.parseInt(n.value));
 
-        switch(type)
+            case IdentNode:
+                var n = cast(node.right, IdentNode);
+                var left = symbols[node.left.value].start;
+                var right = symbols[n.value].start;
+                var temp = 0;
+                str += '\n';
+                str += emitClear(temp);
+                str += emitClear(left);
+                // right[left+temp+right-]
+                str += '${emitMove(right)}[${emitMove(left)}+${emitMove(temp)}+${emitMove(right)}-]\n';
+                // temp[right+temp-]
+                str += '${emitMove(temp)}[${emitMove(right)}+${emitMove(temp)}-]\n';
+
+            case InfixNode:
+                str += generateNode(node.right);
+        }
+        return str;
+    }
+
+    private function emitInfix(node:InfixNode):String
+    {
+        var str = '';
+        switch(node.value)
         {
             case 'ADD':
-
+                str += generateNode(node.left);
+                str += generateNode(node.right);
+                
             default:
-                throw 'Operation ${type} unsupported.';
+                throw 'Operation ${node.value} unsupported.';
         }
-
         return str;
     }
 }

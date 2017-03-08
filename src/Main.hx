@@ -43,7 +43,7 @@ class Main
         var outPath = "test/out.js";
         trace('_______ \'${outPath}\': ________________________________________');
 
-        var generator = new backends.JSGenerator(root, outPath);
+        var generator = new backends.BFGenerator(root, outPath);
         var output = generator.generate();
         trace(output);
     }
