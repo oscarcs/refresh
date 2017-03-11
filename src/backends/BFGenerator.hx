@@ -134,8 +134,59 @@ class BFGenerator implements IGenerator
 
             case InfixNode:
                 var n = cast(node.right, InfixNode);
+                generateThreeAddress(n);
         }
         return str;
+    }
+
+    private function generateThreeAddress(root:Node)
+    {
+        function temp(val:Int)
+        {
+            return "TEMP_" + val;
+        }
+
+        function threeAddress(node:Node, val:Int):Int
+        {
+            if (Type.getClass(node) == InfixNode)
+            {
+                var str = '';
+                var n = cast(node, InfixNode);
+                var left_temp = threeAddress(n.left, val+1);
+                var right_temp = threeAddress(n.right, val+2);
+
+                // add the left side of the assignment: 
+                str += '${temp(val)} = ';
+
+                // add the left operand:
+                if (Type.getClass(n.left) != InfixNode)
+                {
+                    str += '${n.left.value}';
+                }
+                else
+                {
+                    str += temp(left_temp);
+                }
+
+                // add the operation:
+                str += ' ${n.value} ';
+                
+                // add the right operand:
+                if (Type.getClass(n.right) != InfixNode)
+                {
+                    str += '${n.right.value}';
+                }
+                else
+                {
+                    str += temp(right_temp);
+                }
+
+                trace(str);
+            }
+            return val;
+        }
+
+        threeAddress(root, 0);
     }
 
     // Simple assignment of the form x = y
