@@ -40,9 +40,12 @@ class BFGenerator implements IGenerator
         return string;
     }
 
+    /**
+     * Code to handle statement-level constructs.
+     */
     private function generateNode(node:Node):String
     {
-                //@@CLEANUP: can we do this w/o casting?
+        //@@CLEANUP: can we do this w/o casting?
         var str:String = '';
         switch(Type.getClass(node))
         {
@@ -61,14 +64,6 @@ class BFGenerator implements IGenerator
                 }
                 str += emitMove(dataLast);
                 str += emitAssignment(n);
-
-            case IdentNode:
-                var n = cast(node, IdentNode);
-                str += emitMove(symbols[n.value].start);
-
-            case InfixNode:
-                var n = cast(node, InfixNode);
-                str += emitInfix(n);
         }
 
         return str;
@@ -132,35 +127,31 @@ class BFGenerator implements IGenerator
                 str += emitValue(Std.parseInt(n.value));
 
             case IdentNode:
-                var n = cast(node.right, IdentNode);
-                var left = symbols[node.left.value].start;
-                var right = symbols[n.value].start;
-                var temp = 0;
-                str += emitClear(temp);
-                str += emitClear(left);
-                // right[left+temp+right-]
-                str += '${emitMove(right)}[${emitMove(left)}+${emitMove(temp)}+${emitMove(right)}-]\n';
-                // temp[right+temp-]
-                str += '${emitMove(temp)}[${emitMove(right)}+${emitMove(temp)}-]\n';
+                // get the memory locations of the left and right operands:
+                var left_i = symbols[node.left.value].start;
+                var right_i = symbols[node.right.value].start;
+                str += emitSimpleAssignment(left_i, right_i);
 
             case InfixNode:
-                str += generateNode(node.right);
+                var n = cast(node.right, InfixNode);
         }
         return str;
     }
 
-    private function emitInfix(node:InfixNode):String
+    // Simple assignment of the form x = y
+    private function emitSimpleAssignment(left_i:Int, right_i:Int):String
     {
         var str = '';
-        switch(node.value)
-        {
-            case 'ADD':
-                str += generateNode(node.left);
-                str += generateNode(node.right);
-                
-            default:
-                throw 'Operation ${node.value} unsupported.';
-        }
+        var temp = 0;
+        str += emitClear(temp);
+        str += emitClear(left_i);
+
+        // right[left+temp+right-]
+        str += '${emitMove(right_i)}[${emitMove(left_i)}+${emitMove(temp)}+${emitMove(right_i)}-]\n';
+
+        // temp[right+temp-]
+        str += '${emitMove(temp)}[${emitMove(right_i)}+${emitMove(temp)}-]\n';
+
         return str;
     }
 }
