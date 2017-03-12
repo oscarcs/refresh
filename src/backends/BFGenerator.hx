@@ -141,52 +141,58 @@ class BFGenerator implements IGenerator
 
     private function generateThreeAddress(root:Node)
     {
-        function temp(val:Int)
-        {
-            return "TEMP_" + val;
-        }
+        var val = 0;
+        var str = '';
 
-        function threeAddress(node:Node, val:Int):Int
+        function threeAddress(node:Node):String
         {
-            if (Type.getClass(node) == InfixNode)
+            var str = '';
+            var lstr = '';
+            var rstr = '';
+            var n = cast(node, InfixNode);
+            str += 't${val} = ';
+
+            // left:
+            if (Type.getClass(n.left) == InfixNode)
             {
-                var str = '';
-                var n = cast(node, InfixNode);
-                var left_temp = threeAddress(n.left, val+1);
-                var right_temp = threeAddress(n.right, val+2);
-
-                // add the left side of the assignment: 
-                str += '${temp(val)} = ';
-
-                // add the left operand:
-                if (Type.getClass(n.left) != InfixNode)
-                {
-                    str += '${n.left.value}';
-                }
-                else
-                {
-                    str += temp(left_temp);
-                }
-
-                // add the operation:
-                str += ' ${n.value} ';
-                
-                // add the right operand:
-                if (Type.getClass(n.right) != InfixNode)
-                {
-                    str += '${n.right.value}';
-                }
-                else
-                {
-                    str += temp(right_temp);
-                }
-
-                trace(str);
+                str += 't${1 + val++}';
+                lstr = threeAddress(n.left);
             }
-            return val;
+            else
+            {
+                str += n.left.value;
+            }
+
+            // op:
+            str += ' ${n.value} ';
+
+            // right:
+            if (Type.getClass(n.right) == InfixNode)
+            {
+                str += 't${1 + val++}';
+                rstr = threeAddress(n.right);
+            }
+            else
+            {
+                str += '${n.right.value}';
+            }
+
+            
+            var hasOnlyLeaves = n.children.filter(function(n) {
+                return Type.getClass(n) == InfixNode; 
+            }).length == 0;
+
+            if (!hasOnlyLeaves)
+            {
+                val++;
+            }
+            
+            str += '\n';
+            return lstr + rstr + str;
         }
 
-        threeAddress(root, 0);
+        str += threeAddress(root);
+        trace(str);
     }
 
     // Simple assignment of the form x = y
