@@ -176,7 +176,7 @@ class BFGenerator implements IGenerator
             if (Type.getClass(n.left) == InfixNode)
             {
                 linearExpr.left.isPointer = true;
-                linearExpr.left.value = 1+val++;
+                linearExpr.left.value = (val += 1);
                 exprs.push(linearize(n.left));
             }
             else
@@ -192,7 +192,7 @@ class BFGenerator implements IGenerator
             if (Type.getClass(n.right) == InfixNode)
             {
                 linearExpr.right.isPointer = true;
-                linearExpr.right.value = 1+val++;
+                linearExpr.right.value = (val += 1);
                 exprs.push(linearize(n.right));
             }
             else
@@ -220,7 +220,7 @@ class BFGenerator implements IGenerator
         }
     }
 
-    // Conmstant assignment - add or subtract a constant
+    // Constant assignment - add or subtract a constant:
     private function emitConstantAssignment(leftIndex:Int, value:Int, op:String)
     {
         var str = '';
