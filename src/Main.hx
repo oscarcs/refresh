@@ -2,6 +2,7 @@ package ;
 
 import Parser;
 import Node;
+import backends.BFGenerator;
 
 class Main
 {    
@@ -19,6 +20,14 @@ class Main
             else if (Std.is(v, Node))
             {
                 _trace(stringifyNodeRecurse(v), null);
+            }
+            else if (Std.is(v, { isPointer:Bool, value:Int }))
+            {
+                _trace(stringifyBFVar(v), null);
+            }
+            else if (Std.is(v, BFLinearExpr))
+            {
+                _trace(stringifyBFLinearExpr(v), null);
             }
             else
             {
@@ -46,6 +55,21 @@ class Main
         var generator = new backends.BFGenerator(root, outPath);
         var output = generator.generate();
         trace(output);
+    }
+
+    static function stringifyBFVar(bfvar:BFVar):String
+    {
+        var str = '';
+        str += bfvar.isPointer ? '*' : '';
+        str += bfvar.value;
+        return str;
+    }
+
+    static function stringifyBFLinearExpr(expr:BFLinearExpr):String
+    {
+        var str = '';
+        str += '${stringifyBFVar(expr.lvalue)} = ${stringifyBFVar(expr.left)} ${expr.op} ${stringifyBFVar(expr.right)};';
+        return str;
     }
 
     static function stringifyNodeRecurse(root:Node):String
