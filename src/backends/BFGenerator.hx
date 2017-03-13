@@ -8,6 +8,18 @@ typedef BFSymbol = {
     var length:Int;
 };
 
+typedef BFVar = {
+    var isPointer:Bool;
+    var value:Int;
+}
+
+typedef BFLinearExpr = {
+    var op:String;
+    var lvalue:BFVar;
+    var left:BFVar;
+    var right:BFVar;
+}
+
 class BFGenerator implements IGenerator
 {
     private var rootNode:Node;
@@ -128,9 +140,9 @@ class BFGenerator implements IGenerator
 
             case IdentNode:
                 // get the memory locations of the left and right operands:
-                var left_i = symbols[node.left.value].start;
-                var right_i = symbols[node.right.value].start;
-                str += emitSimpleAssignment(left_i, right_i);
+                var leftIndex = symbols[node.left.value].start;
+                var rightIndex = symbols[node.right.value].start;
+                str += emitSimpleAssignment(leftIndex, rightIndex);
 
             case InfixNode:
                 var n = cast(node.right, InfixNode);
@@ -142,42 +154,40 @@ class BFGenerator implements IGenerator
     private function generateThreeAddress(root:Node)
     {
         var val = 0;
-        var str = '';
+        var exprs:Array<BFLinearExpr> = [];
 
-        function threeAddress(node:Node):String
+        function threeAddress(node:Node):BFLinearExpr
         {
-            var str = '';
-            var lstr = '';
-            var rstr = '';
+            var linearExpr = { op: null, lvalue: null, left: null, right: null };
+            linearExpr.lvalue = {isPointer:true, value:val};
+            
             var n = cast(node, InfixNode);
-            str += 't${val} = ';
 
             // left:
             if (Type.getClass(n.left) == InfixNode)
             {
-                str += 't${1 + val++}';
-                lstr = threeAddress(n.left);
+                linearExpr.left = { isPointer: true, value: 1+val++ };
+                exprs.push(threeAddress(n.left));
             }
             else
             {
-                str += n.left.value;
+                linearExpr.left = { isPointer: false, value: Std.parseInt(n.left.value) };
             }
 
             // op:
-            str += ' ${n.value} ';
+            linearExpr.op = n.value;
 
             // right:
             if (Type.getClass(n.right) == InfixNode)
             {
-                str += 't${1 + val++}';
-                rstr = threeAddress(n.right);
+                linearExpr.right = { isPointer: true, value: 1+val++ };
+                exprs.push(threeAddress(n.right));
             }
             else
             {
-                str += '${n.right.value}';
+                linearExpr.right = { isPointer: false, value: Std.parseInt(n.right.value) };
             }
-
-            
+    
             var hasOnlyLeaves = n.children.filter(function(n) {
                 return Type.getClass(n) == InfixNode; 
             }).length == 0;
@@ -186,28 +196,42 @@ class BFGenerator implements IGenerator
             {
                 val++;
             }
-            
-            str += '\n';
-            return lstr + rstr + str;
+
+            return linearExpr;
         }
 
-        str += threeAddress(root);
-        trace(str);
+        exprs.push(threeAddress(root));
+        for (expr in exprs)
+        {
+            trace(expr);
+        }
+    }
+
+    // Conmstant assignment - add or subtract a constant
+    private function emitConstantAssignment(leftIndex:Int, value:Int, op:String)
+    {
+        var str = '';
+        str += emitMove(leftIndex);
+        for (i in 0...value)
+        {
+            str += op;
+        }
+        return str;
     }
 
     // Simple assignment of the form x = y
-    private function emitSimpleAssignment(left_i:Int, right_i:Int):String
+    private function emitSimpleAssignment(leftIndex:Int, rightIndex:Int):String
     {
         var str = '';
         var temp = 0;
         str += emitClear(temp);
-        str += emitClear(left_i);
+        str += emitClear(leftIndex);
 
         // right[left+temp+right-]
-        str += '${emitMove(right_i)}[${emitMove(left_i)}+${emitMove(temp)}+${emitMove(right_i)}-]\n';
+        str += '${emitMove(rightIndex)}[${emitMove(leftIndex)}+${emitMove(temp)}+${emitMove(rightIndex)}-]\n';
 
         // temp[right+temp-]
-        str += '${emitMove(temp)}[${emitMove(right_i)}+${emitMove(temp)}-]\n';
+        str += '${emitMove(temp)}[${emitMove(rightIndex)}+${emitMove(temp)}-]\n';
 
         return str;
     }
