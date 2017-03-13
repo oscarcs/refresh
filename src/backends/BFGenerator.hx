@@ -8,16 +8,20 @@ typedef BFSymbol = {
     var length:Int;
 };
 
-typedef BFVar = {
-    var isPointer:Bool;
-    var value:Int;
+class BFVar
+{
+    public var isPointer:Bool;
+    public var value:Int;
+    public function new() { }
 }
 
-typedef BFLinearExpr = {
-    var op:String;
-    var lvalue:BFVar;
-    var left:BFVar;
-    var right:BFVar;
+class BFLinearExpr
+{
+    public var op:String;
+    public var lvalue:BFVar;
+    public var left:BFVar;
+    public var right:BFVar;
+    public function new() { }
 }
 
 class BFGenerator implements IGenerator
@@ -146,32 +150,39 @@ class BFGenerator implements IGenerator
 
             case InfixNode:
                 var n = cast(node.right, InfixNode);
-                generateThreeAddress(n);
+                linearizeExpression(n);
         }
         return str;
     }
 
-    private function generateThreeAddress(root:Node)
+    private function linearizeExpression(root:Node)
     {
         var val = 0;
         var exprs:Array<BFLinearExpr> = [];
 
-        function threeAddress(node:Node):BFLinearExpr
+        function linearize(node:Node):BFLinearExpr
         {
-            var linearExpr = { op: null, lvalue: null, left: null, right: null };
-            linearExpr.lvalue = {isPointer:true, value:val};
+            var linearExpr = new BFLinearExpr();
+            linearExpr.op = null;
+            linearExpr.lvalue = new BFVar();
+            linearExpr.left = new BFVar();
+            linearExpr.right = new BFVar();
+            linearExpr.lvalue.isPointer = true;
+            linearExpr.lvalue.value = val;
             
             var n = cast(node, InfixNode);
 
             // left:
             if (Type.getClass(n.left) == InfixNode)
             {
-                linearExpr.left = { isPointer: true, value: 1+val++ };
-                exprs.push(threeAddress(n.left));
+                linearExpr.left.isPointer = true;
+                linearExpr.left.value = 1+val++;
+                exprs.push(linearize(n.left));
             }
             else
             {
-                linearExpr.left = { isPointer: false, value: Std.parseInt(n.left.value) };
+                linearExpr.left.isPointer = false;
+                linearExpr.left.value = Std.parseInt(n.left.value);
             }
 
             // op:
@@ -180,12 +191,14 @@ class BFGenerator implements IGenerator
             // right:
             if (Type.getClass(n.right) == InfixNode)
             {
-                linearExpr.right = { isPointer: true, value: 1+val++ };
-                exprs.push(threeAddress(n.right));
+                linearExpr.right.isPointer = true;
+                linearExpr.right.value = 1+val++;
+                exprs.push(linearize(n.right));
             }
             else
             {
-                linearExpr.right = { isPointer: false, value: Std.parseInt(n.right.value) };
+                linearExpr.right.isPointer = false; 
+                linearExpr.right.value = Std.parseInt(n.right.value);
             }
     
             var hasOnlyLeaves = n.children.filter(function(n) {
@@ -200,7 +213,7 @@ class BFGenerator implements IGenerator
             return linearExpr;
         }
 
-        exprs.push(threeAddress(root));
+        exprs.push(linearize(root));
         for (expr in exprs)
         {
             trace(expr);
