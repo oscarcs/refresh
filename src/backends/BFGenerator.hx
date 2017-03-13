@@ -146,16 +146,58 @@ class BFGenerator implements IGenerator
                 // get the memory locations of the left and right operands:
                 var leftIndex = symbols[node.left.value].start;
                 var rightIndex = symbols[node.right.value].start;
-                str += emitSimpleAssignment(leftIndex, rightIndex);
+                str += emitCopyAssignment(leftIndex, rightIndex, 0);
 
             case InfixNode:
                 var n = cast(node.right, InfixNode);
-                linearizeExpression(n);
+                str += emitAssignmentExpression(n, node.left.value);
         }
         return str;
     }
 
-    private function linearizeExpression(root:Node)
+    private function emitAssignmentExpression(n:InfixNode, name:String):String
+    {
+        var exprs = linearizeExpression(n);
+        var str = '';
+
+        for (expr in exprs)
+        {
+            // shift up pointers, 0* is reserved.
+            if (expr.left.isPointer) expr.left.value++;
+            if (expr.right.isPointer) expr.right.value++;
+            if (expr.lvalue.isPointer) expr.lvalue.value++;
+
+            trace(expr);
+
+            //@@TODO: clear temporary variables?
+
+            if (!expr.left.isPointer && !expr.right.isPointer)
+            {
+                // optimize by 
+                var value = expr.left.value; 
+                switch(expr.op)
+                {
+                    case 'ADD':
+                        value += expr.right.value;
+                    case 'SUBTRACT':
+                        value -= expr.right.value;
+                    case 'MULTIPLY':
+                        value *= expr.right.value;
+                    case 'DIVIDE':
+                        value = Std.int(value / expr.right.value);
+
+                }
+                str += emitStoreAssignment(expr.lvalue.value, value);
+            }
+
+            // We reserve *0 as a temp variable always:
+            str += emitCopyAssignment(symbols[name].start, expr.lvalue.value, 0);
+        }
+
+        return str;
+    }
+
+    private function linearizeExpression(root:Node):Array<BFLinearExpr>
     {
         var val = 0;
         var exprs:Array<BFLinearExpr> = [];
@@ -214,10 +256,7 @@ class BFGenerator implements IGenerator
         }
 
         exprs.push(linearize(root));
-        for (expr in exprs)
-        {
-            trace(expr);
-        }
+        return exprs;
     }
 
     // Constant assignment - add or subtract a constant:
@@ -227,16 +266,30 @@ class BFGenerator implements IGenerator
         str += emitMove(leftIndex);
         for (i in 0...value)
         {
-            str += op;
+            switch(op)
+            {
+                case 'ADD':
+                    str += '+';
+                case 'SUBTRACT':
+                    str += '-';
+            }
         }
         return str;
     }
 
-    // Simple assignment of the form x = y
-    private function emitSimpleAssignment(leftIndex:Int, rightIndex:Int):String
+    private function emitStoreAssignment(leftIndex:Int, value:Int):String
     {
         var str = '';
-        var temp = 0;
+        str += emitClear(leftIndex);
+        str += emitValue(value);
+        return str;
+    }
+
+    // Simple assignment of the form x = y
+    // Copies a value from one mem addr to another:
+    private function emitCopyAssignment(leftIndex:Int, rightIndex:Int, temp:Int):String
+    {
+        var str = '';
         str += emitClear(temp);
         str += emitClear(leftIndex);
 
