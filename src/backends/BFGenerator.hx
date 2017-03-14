@@ -202,6 +202,34 @@ class BFGenerator implements IGenerator
         var val = 0;
         var exprs:Array<BFLinearExpr> = [];
 
+        // declare this function before it needs to be used:
+        function linearize(node:Node):BFLinearExpr { return new BFLinearExpr(); }
+
+        // resolve the left and right lvalues of the expressions:
+        function resolveRvalue(node:Node):BFVar
+        {
+            var bfvar = new BFVar();
+
+            switch(Type.getClass(node))
+            {
+                case InfixNode:
+                    bfvar.isPointer = true;
+                    bfvar.value = (val += 1);
+                    exprs.push(linearize(node));
+                case IntNode:
+                    bfvar.isPointer = false;
+                    bfvar.value = Std.parseInt(node.value);
+
+                case IdentNode:
+                    bfvar.isPointer = true;
+                    bfvar.value = symbols[node.value].start;
+
+                default:
+            }
+
+            return bfvar;
+        }
+
         function linearize(node:Node):BFLinearExpr
         {
             var linearExpr = new BFLinearExpr();
@@ -214,34 +242,12 @@ class BFGenerator implements IGenerator
             
             var n = cast(node, InfixNode);
 
-            // left:
-            if (Type.getClass(n.left) == InfixNode)
-            {
-                linearExpr.left.isPointer = true;
-                linearExpr.left.value = (val += 1);
-                exprs.push(linearize(n.left));
-            }
-            else
-            {
-                linearExpr.left.isPointer = false;
-                linearExpr.left.value = Std.parseInt(n.left.value);
-            }
+            linearExpr.left = resolveRvalue(n.left);
 
             // op:
             linearExpr.op = n.value;
 
-            // right:
-            if (Type.getClass(n.right) == InfixNode)
-            {
-                linearExpr.right.isPointer = true;
-                linearExpr.right.value = (val += 1);
-                exprs.push(linearize(n.right));
-            }
-            else
-            {
-                linearExpr.right.isPointer = false; 
-                linearExpr.right.value = Std.parseInt(n.right.value);
-            }
+            linearExpr.right = resolveRvalue(n.right);
     
             var hasOnlyLeaves = n.children.filter(function(n) {
                 return Type.getClass(n) == InfixNode; 
@@ -277,6 +283,7 @@ class BFGenerator implements IGenerator
         return str;
     }
 
+    // Store a value in a memory address:
     private function emitStoreAssignment(leftIndex:Int, value:Int):String
     {
         var str = '';
