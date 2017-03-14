@@ -35,13 +35,14 @@ class BFGenerator implements IGenerator
     private var currentCell:Int = 0;
     private var dataStart:Int;
     private var dataLast:Int;
+    private var print_comments:Bool = false; 
     
     public function new(rootNode:Node, outputPath:String)
     {
         this.rootNode = rootNode;
         this.outputPath = outputPath;
 
-        dataStart = 3;
+        dataStart = 6;
         dataLast = dataStart - 1;
     }
 
@@ -160,20 +161,24 @@ class BFGenerator implements IGenerator
         var exprs = linearizeExpression(n);
         var str = '';
 
+        var temp = 0;
         for (expr in exprs)
         {
-            // shift up pointers, 0* is reserved.
-            if (expr.left.isPointer) expr.left.value++;
-            if (expr.right.isPointer) expr.right.value++;
-            if (expr.lvalue.isPointer) expr.lvalue.value++;
+            if (expr.lvalue.value > temp) temp = expr.lvalue.value;
+        }
+        temp++;
+        trace(temp);
+
+        for (expr in exprs)
+        {
 
             trace(expr);
 
             //@@TODO: clear temporary variables?
 
+            // if the left and right rvalues are values:
             if (!expr.left.isPointer && !expr.right.isPointer)
             {
-                // optimize by 
                 var value = expr.left.value; 
                 switch(expr.op)
                 {
@@ -189,9 +194,50 @@ class BFGenerator implements IGenerator
                 }
                 str += emitStoreAssignment(expr.lvalue.value, value);
             }
+            else if (expr.left.isPointer || expr.right.isPointer)
+            {
+                if (expr.left.isPointer && !expr.right.isPointer)
+                {
+                    str += emitClear(expr.lvalue.value);
+                    str += emitCopyAssignment(expr.lvalue.value, expr.left.value, temp);
+                    switch(expr.op)
+                    {
+                        case 'ADD':
+                            str += emitMove(expr.lvalue.value);
+                            str += emitValue(expr.right.value);
+                            if (print_comments) str += ' # add ${expr.right.value}';
+                        case 'SUBTRACT':
+                            str += emitMove(expr.lvalue.value);
+                            str += emitValue(-expr.right.value);
+                        default:
+                            throw '${expr.op} not supported.';
+                    }
+                }
+                else if (!expr.left.isPointer && expr.right.isPointer)
+                {
+                    str += emitClear(expr.lvalue.value);
+                    str += emitCopyAssignment(expr.lvalue.value, expr.right.value, temp);
+                    switch(expr.op)
+                    {
+                        case 'ADD':
+                            str += emitMove(expr.lvalue.value);
+                            str += emitValue(expr.left.value);
+                        default:
+                            throw '${expr.op} not supported.';
+                    }
+                }
+                else // both
+                {
+                    str += emitClear(expr.lvalue.value);
+                    str += emitCopyAssignment(expr.lvalue.value, expr.left.value, temp);
+                    str += emitCopyAssignment(expr.lvalue.value, expr.right.value, temp);
+                }
+                str += '\n';
+            }
 
             // We reserve *0 as a temp variable always:
-            str += emitCopyAssignment(symbols[name].start, expr.lvalue.value, 0);
+            str += emitClear(symbols[name].start);
+            str += emitCopyAssignment(symbols[name].start, expr.lvalue.value, temp);
         }
 
         return str;
@@ -202,11 +248,8 @@ class BFGenerator implements IGenerator
         var val = 0;
         var exprs:Array<BFLinearExpr> = [];
 
-        // declare this function before it needs to be used:
-        function linearize(node:Node):BFLinearExpr { return new BFLinearExpr(); }
-
         // resolve the left and right lvalues of the expressions:
-        function resolveRvalue(node:Node):BFVar
+        function resolveRvalue(node:Node, linearize:Node->BFLinearExpr):BFVar
         {
             var bfvar = new BFVar();
 
@@ -242,12 +285,12 @@ class BFGenerator implements IGenerator
             
             var n = cast(node, InfixNode);
 
-            linearExpr.left = resolveRvalue(n.left);
+            linearExpr.left = resolveRvalue(n.left, linearize);
 
             // op:
             linearExpr.op = n.value;
 
-            linearExpr.right = resolveRvalue(n.right);
+            linearExpr.right = resolveRvalue(n.right, linearize);
     
             var hasOnlyLeaves = n.children.filter(function(n) {
                 return Type.getClass(n) == InfixNode; 
@@ -280,6 +323,7 @@ class BFGenerator implements IGenerator
                     str += '-';
             }
         }
+        if (print_comments) str += ' # ${op.toLowerCase()} ${value} to *${leftIndex}\n'; 
         return str;
     }
 
@@ -289,6 +333,7 @@ class BFGenerator implements IGenerator
         var str = '';
         str += emitClear(leftIndex);
         str += emitValue(value);
+        if (print_comments) str += ' # store ${value} at *${leftIndex}\n';
         return str;
     }
 
@@ -298,13 +343,13 @@ class BFGenerator implements IGenerator
     {
         var str = '';
         str += emitClear(temp);
-        str += emitClear(leftIndex);
 
         // right[left+temp+right-]
-        str += '${emitMove(rightIndex)}[${emitMove(leftIndex)}+${emitMove(temp)}+${emitMove(rightIndex)}-]\n';
+        str += '${emitMove(rightIndex)}[${emitMove(leftIndex)}+${emitMove(temp)}+${emitMove(rightIndex)}-]';
 
         // temp[right+temp-]
-        str += '${emitMove(temp)}[${emitMove(rightIndex)}+${emitMove(temp)}-]\n';
+        str += '${emitMove(temp)}[${emitMove(rightIndex)}+${emitMove(temp)}-] ';
+        if (print_comments) str += '# copy *${rightIndex} to *${leftIndex} (${temp})\n';
 
         return str;
     }
