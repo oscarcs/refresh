@@ -1,7 +1,6 @@
 package backends;
 
 import Node;
-import Parser;
 
 typedef BFSymbol = {
     var start:Int;
@@ -167,12 +166,11 @@ class BFGenerator implements IGenerator
             if (expr.lvalue.value > temp) temp = expr.lvalue.value;
         }
         temp++;
-        trace(temp);
 
         for (expr in exprs)
         {
 
-            trace(expr);
+            //trace(expr);
 
             //@@TODO: clear temporary variables?
 
@@ -349,7 +347,7 @@ class BFGenerator implements IGenerator
 
         // temp[right+temp-]
         str += '${emitMove(temp)}[${emitMove(rightIndex)}+${emitMove(temp)}-] ';
-        if (print_comments) str += '# copy *${rightIndex} to *${leftIndex} (${temp})\n';
+        if (print_comments) str += '# copy *${rightIndex} to *${leftIndex} (${temp})';
 
         return str;
     }

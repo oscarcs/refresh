@@ -49,7 +49,7 @@ class Main
         var root = parser.parse();
         trace(root);
         
-        var outPath = "test/out.js";
+        var outPath = "test/out.bf";
         trace('_______ \'${outPath}\': ________________________________________');
 
         var generator = new backends.BFGenerator(root, outPath);
