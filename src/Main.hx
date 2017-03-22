@@ -3,6 +3,8 @@ package ;
 import Parser;
 import Node;
 import backends.BFGenerator;
+import backends.JSGenerator;
+import backends.IGenerator;
 
 class Main
 {    
@@ -34,27 +36,141 @@ class Main
                 _trace(v, null);
             }
         }
+        
+        compile();
+    }
 
-        var data = Files.read("test/lex.prog");
-        var lexer = new Lexer(data);
-        var tokens = lexer.lex();
-        for (token in tokens)
+    static function compile()
+    {
+        var COMPILE:Bool = true;
+        var DEFAULT_INPUT_PATH:String = "test/lex.prog";
+        var INPUT_PATH:String = null;
+        var DEFAULT_OUTPUT_PATH:String = "test/lex.js";
+        var OUTPUT_PATH:String = null;
+        var TRACE_LEVEL:Int = 0; // 0-3
+        var BACKEND:String = 'js';
+
+        var args = CLI.getArgs();
+        if (args != null)
         {
-            trace('Ln ${token.line}, Col ${token.pos}: ${token.type} (${token.lexeme})');
+            var hasInputPath:Bool = false;
+            for (arg in args)
+            {
+                if (arg == '-h' || arg == '--help') {
+                    printHelp();
+                    COMPILE = false;
+                }
+                else if (arg == '-js')
+                {
+                    // use JS backend:
+                    BACKEND = 'js';
+                }
+                else if (arg == '-bf')
+                {
+                    // use BF backend:
+                    BACKEND = 'bf';
+                }
+                else if (arg == 't0' || arg == 't1' || arg == 't2' || arg == 't3')
+                {
+                    TRACE_LEVEL = Std.parseInt(arg.substring(1));
+                }
+                else if (Files.exists(arg))
+                {
+                    if (!hasInputPath)
+                    {
+                        INPUT_PATH = arg;
+                        hasInputPath = true;
+                    }
+                    else
+                    {
+                        OUTPUT_PATH = arg;
+                    }
+                }
+                else if (hasInputPath)
+                {
+                    OUTPUT_PATH = arg;
+                }
+            }
         }
-        
-        trace('');
+        else {
+            // use default settings:
+            if (Files.exists(DEFAULT_INPUT_PATH))
+            {
+                INPUT_PATH = DEFAULT_INPUT_PATH;
+            }
+            OUTPUT_PATH = DEFAULT_OUTPUT_PATH;
+            TRACE_LEVEL = 3; // max trace level
+            BACKEND = 'js';
+        }
 
-        var parser = new Parser(tokens);
-        var root = parser.parse();
-        trace(root);
-        
-        var outPath = "test/out.bf";
-        trace('_______ \'${outPath}\': ________________________________________');
+        if (INPUT_PATH == null) INPUT_PATH = DEFAULT_INPUT_PATH;
+        if (OUTPUT_PATH == null) OUTPUT_PATH = DEFAULT_OUTPUT_PATH;
 
-        var generator = new backends.BFGenerator(root, outPath);
-        var output = generator.generate();
-        trace(output);
+        if (COMPILE)
+        {
+            // read in the file:
+            var data = Files.read(INPUT_PATH);
+            
+            // lex the code:
+            var lexer = new Lexer(data);
+            var tokens = lexer.lex();
+
+            // trace the tokens:
+            if (TRACE_LEVEL >= 2)
+            {
+                for (token in tokens)
+                {
+                    trace('Ln ${token.line}, Col ${token.pos}: ${token.type} (${token.lexeme})');
+                }
+                trace('');
+            }
+            
+            // parse the code:
+            var parser = new Parser(tokens);
+            var root = parser.parse();
+            
+            // trace the AST:
+            if (TRACE_LEVEL >= 2)
+            {
+                trace(root);
+            }
+
+            // generate the code:1
+            var generator:IGenerator;
+            switch (BACKEND)
+            {
+                case 'js':
+                    generator = new JSGenerator(root);
+
+                case 'bf':
+                    generator = new BFGenerator(root);
+
+                default:
+                    throw 'backend not found';
+            }        
+            var output = generator.generate();
+            
+            // trace the generated code:
+            if (TRACE_LEVEL >= 3)
+            {
+                trace('_______ \'${OUTPUT_PATH}\': ________________________________________');
+                trace(output);
+            }
+
+            //@@TODO: check the output directory exists
+            // output the generated code:
+            Files.write(OUTPUT_PATH, output);
+        }
+    }
+
+    static function printHelp()
+    {
+        trace("Refresh Compiler");
+        trace("(Pre-alpha)\n");
+        trace("Usage: refresh [options] file_in file_out");
+        trace("Options:");
+        trace("--help, -h:\t\t Display help.");
+        trace("-t0, -t1, -t2, -t3:\t Set the trace level.");
     }
 
     static function stringifyBFVar(bfvar:BFVar):String
