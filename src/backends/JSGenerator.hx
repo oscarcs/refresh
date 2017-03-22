@@ -6,7 +6,6 @@ import Parser;
 class JSGenerator implements IGenerator
 {
     private var rootNode:Node;
-    private var outputPath:String;
 
     private var symbols = new Map<String, Symbol>();
     private var operators:Map<String, String> = [
@@ -23,10 +22,9 @@ class JSGenerator implements IGenerator
         "AND" => '&&'
     ];
 
-    public function new(rootNode:Node, outputPath:String)
+    public function new(rootNode:Node)
     {
         this.rootNode = rootNode;
-        this.outputPath = outputPath;
     }
 
     public function generate():String
@@ -34,8 +32,6 @@ class JSGenerator implements IGenerator
         var string = '';
 
         string += generateNode(rootNode);
-
-        Files.write(outputPath, string);
 
         return string;
     }

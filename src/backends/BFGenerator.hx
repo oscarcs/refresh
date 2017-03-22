@@ -26,7 +26,6 @@ class BFLinearExpr
 class BFGenerator implements IGenerator
 {
     private var rootNode:Node;
-    private var outputPath:String;
 
     private var symbols = new Map<String, BFSymbol>();
 
@@ -36,10 +35,9 @@ class BFGenerator implements IGenerator
     private var dataLast:Int;
     private var print_comments:Bool = false; 
     
-    public function new(rootNode:Node, outputPath:String)
+    public function new(rootNode:Node)
     {
         this.rootNode = rootNode;
-        this.outputPath = outputPath;
 
         dataStart = 6;
         dataLast = dataStart - 1;
@@ -50,8 +48,6 @@ class BFGenerator implements IGenerator
         var string = '';
 
         string += generateNode(rootNode);
-
-        Files.write(outputPath, string);
 
         return string;
     }
