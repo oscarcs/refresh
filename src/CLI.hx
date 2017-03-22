@@ -9,11 +9,11 @@ class CLI
     {
         var args:Array<String> = [];
 
-#if node
+        #if node
 
-        args = Process.argv.slice(2);
+            args = Process.argv.slice(2);
 
-#end
+        #end
 
         return args;
     }
