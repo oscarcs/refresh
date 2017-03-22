@@ -1,4 +1,4 @@
 -cp src
 -main Main
 -D node
--js main.js
+-js refresh.js

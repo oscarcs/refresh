@@ -1,2 +1,2 @@
 haxe build.hxml
-node main.js
+#node main.js -bf -t3 test/lex.prog test.bf
