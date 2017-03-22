@@ -70,9 +70,9 @@ class Main
                     // use BF backend:
                     BACKEND = 'bf';
                 }
-                else if (arg == 't0' || arg == 't1' || arg == 't2' || arg == 't3')
+                else if (arg == '-t0' || arg == '-t1' || arg == '-t2' || arg == '-t3')
                 {
-                    TRACE_LEVEL = Std.parseInt(arg.substring(1));
+                    TRACE_LEVEL = Std.parseInt(arg.substring(2));
                 }
                 else if (Files.exists(arg))
                 {
