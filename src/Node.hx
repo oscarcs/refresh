@@ -122,6 +122,7 @@ class PostfixNode extends Node
 class CallNode extends Node
 {
     public var name:Node;
+    public var args:Array<Node>;
     override public function new(name:Node, args:Array<Node>)
     {
         super(name.value);
@@ -130,6 +131,7 @@ class CallNode extends Node
         for (arg in args)
         {
             children.push(arg);
+            this.args.push(arg);
             arg.parent = this;
         }
     }
