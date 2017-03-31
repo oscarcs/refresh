@@ -31,6 +31,8 @@ class JSGenerator implements IGenerator
         "R_SHIFT" => '>>'
     ];
 
+    private var indentLevel:Int = 0;
+
     public function new(rootNode:Node)
     {
         this.rootNode = rootNode;
@@ -46,14 +48,14 @@ class JSGenerator implements IGenerator
     }
 
     private function generateNode(node:Node):String
-    {
+    {   
         //@@CLEANUP: can we do this w/o casting?
         var str:String = '';
         switch(Type.getClass(node))
         {
             case RootNode:
                 var n = cast(node, RootNode);
-                str += n.children.map(generateNode).join('\n');
+                str += generateChildren(node.children);
 
             case AssignNode:
                 var n = cast(node, AssignNode);
@@ -64,7 +66,7 @@ class JSGenerator implements IGenerator
                     //@@TODO: use a more appropriate value for symtab.
                     symbols[n.left.value] = { type:'DYNAMIC' };
                 }
-                str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)};';
+                str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
 
             case IdentNode:
                 var n = cast(node, IdentNode);
@@ -77,26 +79,26 @@ class JSGenerator implements IGenerator
             case WhileNode:
                 var n = cast(node, WhileNode);
                 str += 'while (${generateNode(n.condition)}) {\n';
-                for (child in n.body) {
-                    str += '${generateNode(child)}\n';
-                }
-                str += '\n}';
+                indent();
+                str += generateChildren(n.body);
+                unindent();
+                str += line('}\n');
 
             case IfNode:
                 var n = cast(node, IfNode);
                 str += 'if (${generateNode(n.condition)}) {\n';
-                for (child in n.body) {
-                    str += '${generateNode(child)}\n';
-                }
-                str += '\n}';
+                indent();
+                str += generateChildren(n.body);
+                unindent();
+                str += line('}\n');
 
             case BlockNode:
                 var n = cast(node, BlockNode);
-                str += '{\n';
-                for (child in n.children) {
-                    str += '${generateNode(child)}';
-                }            
-                str += '\n}';
+                str += line('{\n');
+                indent();
+                str += generateChildren(n.children);        
+                unindent();  
+                str += line('}\n');
 
             case InfixNode:
                 var n = cast(node, InfixNode);
@@ -104,13 +106,59 @@ class JSGenerator implements IGenerator
 
             case PrefixNode:
                 var n = cast(node, PrefixNode);
-                str += '${operators[n.value]} ${generateNode(n.child)}';
+                str += '${operators[n.value]}${generateNode(n.child)}';
 
             case PostfixNode:
                 var n = cast(node, PostfixNode);
-                str += '${generateNode(n.child)} ${operators[n.value]}';
+                str += '${generateNode(n.child)}${operators[n.value]}';
         }
 
         return str;
+    }
+
+    //@@TODO: probably refactor this info into the front-end.
+    private function isStatement(node:Node):Bool
+    {
+        var type = Type.getClass(node);
+        return (type != BlockNode && type != IfNode && type != WhileNode);
+    }
+
+    private function generateChildren(children:Array<Node>):String
+    {
+        var str = '';
+        for (child in children)
+        {
+            if (isStatement(child))
+            {
+                str += line('${generateNode(child)};\n');
+            }
+            else
+            {
+                str += '${generateNode(child)}';
+            }
+        }
+        str += '\n';
+        return str;
+    }
+
+    private function line(line:String):String
+    {
+        var str = '';
+        for (i in 0...indentLevel)
+        {
+            str += '    ';
+        }
+        str += line;
+        return str;
+    }
+
+    private function indent():Void
+    {
+        indentLevel++;
+    }
+
+    private function unindent():Void
+    {
+        indentLevel--;
     }
 }
