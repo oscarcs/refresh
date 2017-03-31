@@ -10,8 +10,14 @@ class JSGenerator implements IGenerator
     private var symbols = new Map<String, Symbol>();
     private var operators:Map<String, String> = [
         "ASSIGN" => '=',
+        "ADD" => '+',
+        "SUBTRACT" => '-',
+        "MULTIPLY" => '*',
+        "DIVIDE" => '/',
         "ADD_ASSIGN" => '+=',
         "SUBTRACT_ASSIGN" => '-=',
+        "INCREMENT" => '++',
+        "DECREMENT" => '--',
         "EQUALITY" => '==',
         "INEQUALITY" => '!=',
         "LESS_THAN" => '<',
@@ -19,7 +25,10 @@ class JSGenerator implements IGenerator
         "GREATER_OR_EQUAL" => '>=',
         "LESS_OR_EQUAL" => '<=',
         "OR" => '||',
-        "AND" => '&&'
+        "AND" => '&&',
+        "NOT" => '!',
+        "L_SHIFT" => '<<',
+        "R_SHIFT" => '>>'
     ];
 
     public function new(rootNode:Node)
@@ -79,11 +88,27 @@ class JSGenerator implements IGenerator
                 for (child in n.body) {
                     str += '${generateNode(child)}\n';
                 }
-                str += '\n}';            
+                str += '\n}';
+
+            case BlockNode:
+                var n = cast(node, BlockNode);
+                str += '{\n';
+                for (child in n.children) {
+                    str += '${generateNode(child)}';
+                }            
+                str += '\n}';
 
             case InfixNode:
                 var n = cast(node, InfixNode);
                 str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
+
+            case PrefixNode:
+                var n = cast(node, PrefixNode);
+                str += '${operators[n.value]} ${generateNode(n.child)}';
+
+            case PostfixNode:
+                var n = cast(node, PostfixNode);
+                str += '${generateNode(n.child)} ${operators[n.value]}';
         }
 
         return str;
