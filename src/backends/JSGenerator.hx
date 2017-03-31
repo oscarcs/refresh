@@ -111,9 +111,33 @@ class JSGenerator implements IGenerator
             case PostfixNode:
                 var n = cast(node, PostfixNode);
                 str += '${generateNode(n.child)}${operators[n.value]}';
+
+            case CallNode:
+                var n = cast(node, CallNode);
+                var name = resolveFunction(n.name);
+                var call = '';
+                call += '${name}(';
+                for (arg in n.args)
+                {
+                    call += '${generateNode(arg)}, ';
+                }
+                call = call.substring(0, call.length - 2);
+                call += ')';
+                str += line(call);
         }
 
         return str;
+    }
+
+    //@@TODO: move some of this logic to the front-end.
+    private function resolveFunction(node:Node):String
+    {
+        switch (node.value)
+        {
+            case "print":
+                return "console.log";
+        }
+        return node.value;
     }
 
     //@@TODO: probably refactor this info into the front-end.
