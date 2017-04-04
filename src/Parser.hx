@@ -72,6 +72,14 @@ class Parser
             "L_PAREN",
             function(token:Token, left:Node) {
                 var args:Array<Node> = [];
+
+                // check the function is in the symtab:
+                if (!symbols.exists(left.value))
+                {
+                    //@@ERROR
+                    throw 'Function ${left.value} not found.';
+                }
+
                 if (lookahead().type != "R_PAREN")
                 {
                     while (true)
@@ -132,6 +140,10 @@ class Parser
         // simple postfix operators:
         registerPostfix("INCREMENT", 70);
         registerPostfix("DECREMENT", 70);
+
+        //@@TODO: Handle this more elegantly?
+        // Add symtab defaults:
+        symbols["print"] = { type: "Dynamic->Dynamic" };
     }
 
     private function register(type:String, f:Parselet, affix:String, precedence:Int)
@@ -263,6 +275,11 @@ class Parser
             node = declaration();
             advance("SEMICOLON");
         }
+        else if (lookahead().type == "FUNCTION")
+        {
+            node = functionDeclaration();
+            advance();
+        }
         else if (lookahead().type == "WHILE")
         {
             node = whileLoop();
@@ -316,6 +333,45 @@ class Parser
         symbols[n.left.value] = { type:"DYNAMIC" };
 
         return expr;
+    }
+
+    private function functionDeclaration():Node
+    {
+        advance("FUNCTION");
+        advance("IDENTIFIER");
+        var name = new IdentNode(c.lexeme);
+
+        advance("L_PAREN");
+        var type = "";
+        var args:Array<Node> = [];
+        while (true)
+        {
+            advance("IDENTIFIER");
+
+            args.push(new IdentNode(c.lexeme));
+
+            advance("COLON");
+            advance("IDENTIFIER");
+
+            //@@TYPECHECKER
+            // add type data:
+            type += '${c.lexeme}->';
+
+            if (lookahead().type == "R_PAREN") break;
+        }
+        advance("R_PAREN");
+        advance("COLON");
+        advance("IDENTIFIER");
+
+        //@@TYPECHECKER
+        type += c.lexeme;
+
+        var body = block().children;
+
+        // add to the symtab:
+        symbols[name.value] = { type: type };
+        
+        return new FunctionNode(name, args, body);
     }
 
     private function whileLoop():Node

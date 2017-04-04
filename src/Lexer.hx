@@ -60,7 +60,9 @@ class Lexer
         'let' => "DECLARATION",
         'for' => "FOR",
         'while' => "WHILE",
-        'if' => "IF"
+        'if' => "IF",
+        'extern' => "EXTERN",
+        'function' => "FUNCTION"
     ];
 
     public function new(data:String)
