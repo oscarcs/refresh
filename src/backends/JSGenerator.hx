@@ -18,7 +18,7 @@ class JSGenerator implements IGenerator
         "SUBTRACT_ASSIGN" => '-=',
         "INCREMENT" => '++',
         "DECREMENT" => '--',
-        "EQUALITY" => '==',
+        "EQUALITY" => '===',
         "INEQUALITY" => '!=',
         "LESS_THAN" => '<',
         "GREATER_THAN" => '>',

@@ -135,7 +135,7 @@ class Main
                 trace(root);
             }
 
-            // generate the code:1
+            // generate the code:
             var generator:IGenerator;
             switch (BACKEND)
             {
