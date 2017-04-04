@@ -70,12 +70,36 @@ class AssignNode extends Node
     override public function new(value:String, left:Node, right:Node)
     {
         super(value);
-        this.children.push(left);
-        this.children.push(right);
-        this.left = this.children[0];
-        this.right = this.children[1];
+        children.push(left);
+        children.push(right);
+        this.left = children[0];
+        this.right = children[1];
         this.left.parent = this;
         this.right.parent = this;   
+    }
+}
+
+class FunctionNode extends Node
+{
+    public var name:Node;
+    public var args:Array<Node> = [];
+    public var body:Array<Node> = [];
+    override public function new(name:Node, args:Array<Node>, body:Array<Node>)
+    {
+        super(name.value);
+        children.push(name);
+        children = children.concat(args);
+        children = children.concat(body);
+        for (arg in args)
+        {
+            arg.parent = this;
+            this.args.push(arg);
+        }
+        for (node in body)
+        {
+            node.parent = this;
+            this.body.push(node);
+        }
     }
 }
 
@@ -85,8 +109,8 @@ class PrefixNode extends Node
     override public function new(value:String, child:Node)
     {
         super(value);
-        this.children.push(child);
-        this.child = this.children[0];
+        children.push(child);
+        this.child = children[0];
         this.child.parent = this;
     }
 }
@@ -98,10 +122,10 @@ class InfixNode extends Node
     override public function new(value:String, left:Node, right:Node)
     {
         super(value);
-        this.children.push(left);
-        this.children.push(right);
-        this.left = this.children[0];
-        this.right = this.children[1];
+        children.push(left);
+        children.push(right);
+        this.left = children[0];
+        this.right = children[1];
         this.left.parent = this;
         this.right.parent = this;        
     }
@@ -113,8 +137,8 @@ class PostfixNode extends Node
     override public function new(value:String, child:Node)
     {
         super(value);
-        this.children.push(child);
-        this.child = this.children[0];
+        children.push(child);
+        this.child = children[0];
         this.child.parent = this;
     }
 }
