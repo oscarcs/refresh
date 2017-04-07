@@ -88,6 +88,8 @@ class FunctionNode extends Node
     {
         super(name.value);
         children.push(name);
+        this.name = name;
+
         children = children.concat(args);
         children = children.concat(body);
         for (arg in args)
