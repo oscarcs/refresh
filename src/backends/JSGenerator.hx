@@ -51,6 +51,11 @@ class JSGenerator implements IGenerator
     {   
         //@@CLEANUP: can we do this w/o casting?
         var str:String = '';
+        if (node == null)
+        {
+            throw "Node can't be null!";
+        }
+
         switch(Type.getClass(node))
         {
             case RootNode:
@@ -65,8 +70,30 @@ class JSGenerator implements IGenerator
                     str += 'let ${n.left.value};\n';
                     //@@TODO: use a more appropriate value for symtab.
                     symbols[n.left.value] = { type:'DYNAMIC' };
+
+                    // ensure the next line is properly indented:
+                    str += line('');
                 }
                 str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
+
+            case FunctionNode:
+                var n = cast(node, FunctionNode);
+                
+                // get the arguments:
+                var argstr = '';
+                for (arg in n.args)
+                {
+                    argstr += '${arg.value}, ';
+                }
+                argstr = argstr.substring(0, argstr.length - 2);
+
+                // declaration header:
+                str += line('function ${generateNode(n.name)}(${argstr}) {\n');
+                
+                indent();
+                str += generateChildren(n.body);
+                unindent();
+                str += line('}\n'); 
 
             case IdentNode:
                 var n = cast(node, IdentNode);
@@ -123,7 +150,7 @@ class JSGenerator implements IGenerator
                 }
                 call = call.substring(0, call.length - 2);
                 call += ')';
-                str += line(call);
+                str += call;
         }
 
         return str;
@@ -143,8 +170,14 @@ class JSGenerator implements IGenerator
     //@@TODO: probably refactor this info into the front-end.
     private function isStatement(node:Node):Bool
     {
-        var type = Type.getClass(node);
-        return (type != BlockNode && type != IfNode && type != WhileNode);
+        var type = Type.getClassName(Type.getClass(node));
+        var statements:Array<String> = [
+            "BlockNode",
+            "IfNode",
+            "WhileNode",
+            "FunctionNode",
+        ];
+        return (statements.indexOf(type) == -1);
     }
 
     private function generateChildren(children:Array<Node>):String
@@ -158,10 +191,9 @@ class JSGenerator implements IGenerator
             }
             else
             {
-                str += '${generateNode(child)}';
+                str += line('${generateNode(child)}');
             }
         }
-        str += '\n';
         return str;
     }
 
