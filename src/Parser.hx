@@ -4,9 +4,6 @@ import Lexer;
 import Node;
 
 typedef Parselet = Token->Node->Node;
-typedef Symbol = {
-    var type:String;
-};
 
 class Parser
 {
@@ -18,11 +15,12 @@ class Parser
     private var infixFuncs = new Map<String, Parselet>();
     private var precedenceTable = new Map<String, Int>();
 
-    private var symbols = new Map<String, Symbol>();
+    private var symtab:Symtab;
 
     public function new(tokens:Array<Token>) 
     {
         this.tokens = tokens;
+        this.symtab = new Symtab();
 
         // register identifier type:
         register(
@@ -74,7 +72,7 @@ class Parser
                 var args:Array<Node> = [];
 
                 // check the function is in the symtab:
-                if (!symbols.exists(left.value))
+                if (!symtab.exists(left.value))
                 {
                     //@@ERROR
                     throw 'Function ${left.value} not found.';
@@ -143,7 +141,7 @@ class Parser
 
         //@@TODO: Handle this more elegantly?
         // Add symtab defaults:
-        symbols["print"] = { type: "Dynamic->Dynamic" };
+        symtab.put("print", { type: "Dynamic->Dynamic" });
     }
 
     private function register(type:String, f:Parselet, affix:String, precedence:Int)
@@ -300,7 +298,7 @@ class Parser
         if (Std.is(node, AssignNode))
         {
             var n = cast(node, AssignNode);
-            if (!symbols.exists(n.left.value)) 
+            if (!symtab.exists(n.left.value)) 
             {
                 //@@ERROR: undefined variable
                 throw 'Undefined variable "${n.left.value}" cannot be assigned to.';
@@ -313,12 +311,17 @@ class Parser
     // consisting of "{ statement-list }":
     private function block():Node
     {
+        symtab.push();
+
         advance("L_BRACE");
         var statements:Array<Node> = [];
         while (lookahead().type != "R_BRACE")
         {
             statements.push(statement());
         }
+
+        symtab.pop();
+
         return new BlockNode(statements);
     }
 
@@ -330,7 +333,7 @@ class Parser
 
         // add to symbol table:
         var n = cast(expr, AssignNode);
-        symbols[n.left.value] = { type:"DYNAMIC" };
+        symtab.put(n.left.value, { type:"Dynamic" });
 
         return expr;
     }
@@ -369,7 +372,7 @@ class Parser
         var body = block().children;
 
         // add to the symtab:
-        symbols[name.value] = { type: type };
+        symtab.put(name.value, { type: type });
         
         return new FunctionNode(name, args, body);
     }
