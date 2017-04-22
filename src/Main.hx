@@ -37,7 +37,14 @@ class Main
             }
         }
         
-        compile();
+        try
+        {
+            compile();
+        }
+        catch (e:Dynamic)
+        {
+            trace('Error: ${e}');
+        }
     }
 
     static function compile()
