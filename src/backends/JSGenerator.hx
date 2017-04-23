@@ -1,13 +1,13 @@
 package backends;
 
 import Node;
-import Parser;
+import Symtab;
 
 class JSGenerator implements IGenerator
 {
     private var rootNode:Node;
 
-    private var symbols = new Map<String, Symbol>();
+    private var symtab = new Symtab();
     private var operators:Map<String, String> = [
         "ASSIGN" => '=',
         "ADD" => '+',
@@ -59,22 +59,20 @@ class JSGenerator implements IGenerator
         switch(Type.getClass(node))
         {
             case RootNode:
-                var n = cast(node, RootNode);
                 str += generateChildren(node.children);
 
             case AssignNode:
                 var n = cast(node, AssignNode);
-                if (!symbols.exists(n.left.value))
+                if (!symtab.exists(n.left.value))
                 {
                     // generate variable declaration
-                    str += 'let ${n.left.value};\n';
-                    //@@TODO: use a more appropriate value for symtab.
-                    symbols[n.left.value] = { type:'DYNAMIC' };
-
-                    // ensure the next line is properly indented:
-                    str += line('');
+                    str += 'let ${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
+                    
+                    symtab.put(n.left.value, { type:'Dynamic' });
                 }
-                str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
+                else {
+                    str += '${generateNode(n.left)} ${operators[n.value]} ${generateNode(n.right)}';
+                }
 
             case FunctionNode:
                 var n = cast(node, FunctionNode);
@@ -121,7 +119,7 @@ class JSGenerator implements IGenerator
 
             case BlockNode:
                 var n = cast(node, BlockNode);
-                str += line('{\n');
+                str += '{\n';
                 indent();
                 str += generateChildren(n.children);        
                 unindent();  
