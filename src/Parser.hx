@@ -361,13 +361,22 @@ class Parser
             type += '${c.lexeme}->';
 
             if (lookahead().type == "R_PAREN") break;
+            advance("COMMA");
         }
         advance("R_PAREN");
-        advance("COLON");
-        advance("IDENTIFIER");
+        if (lookahead().type == "COLON")
+        {
+            advance("COLON");
+            advance("IDENTIFIER");
 
-        //@@TYPECHECKER
-        type += c.lexeme;
+            // Explicitly add the type of the function 
+            type += c.lexeme;
+        }
+        else {
+            // Infer the type of the function:
+            //@@TYPECHECKER: infer rather than use dynamic
+            type += 'Dynamic';
+        }
 
         var body = block().children;
 
