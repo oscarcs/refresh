@@ -63,6 +63,14 @@ class StringNode extends Node
     }
 }
 
+class BooleanNode extends Node
+{
+    override public function new(value:String)
+    {
+        super(value);
+    }
+}
+
 class AssignNode extends Node
 {
     public var left:Node;
@@ -216,5 +224,13 @@ class IfNode extends Node
             children.push(statement);
             statement.parent = this;
         }
+    }
+}
+
+class BreakNode extends Node
+{
+    override public function new()
+    {
+        super("break");
     }
 }

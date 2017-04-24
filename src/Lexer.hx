@@ -62,7 +62,10 @@ class Lexer
         'while' => "WHILE",
         'if' => "IF",
         'extern' => "EXTERN",
-        'function' => "FUNCTION"
+        'function' => "FUNCTION",
+        'break' => "BREAK",
+        'true' => "BOOLEAN",
+        'false' => "BOOLEAN"
     ];
 
     public function new(data:String)

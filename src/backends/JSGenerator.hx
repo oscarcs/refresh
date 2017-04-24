@@ -99,7 +99,11 @@ class JSGenerator implements IGenerator
 
             case IntNode:
                 var n = cast(node, IntNode);
-                str += n.value + '';
+                str += n.value;
+
+            case BooleanNode:
+                var n = cast(node, BooleanNode);
+                str += n.value;
 
             case WhileNode:
                 var n = cast(node, WhileNode);
@@ -108,6 +112,9 @@ class JSGenerator implements IGenerator
                 str += generateChildren(n.body);
                 unindent();
                 str += line('}\n');
+
+            case BreakNode:
+                str += 'break;\n';
 
             case IfNode:
                 var n = cast(node, IfNode);
@@ -174,6 +181,7 @@ class JSGenerator implements IGenerator
             "IfNode",
             "WhileNode",
             "FunctionNode",
+            "BreakNode"
         ];
         return (statements.indexOf(type) == -1);
     }

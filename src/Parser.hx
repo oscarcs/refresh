@@ -53,6 +53,17 @@ class Parser
             0
         );
 
+        // register boolean literal type:
+        register(
+            "BOOLEAN",
+            function(token:Token, left:Node) {
+                var value = token.lexeme;
+                return new BooleanNode(value);
+            },
+            "none",
+            0
+        );
+
         // register grouping parens:
         register(
             "L_PAREN",
@@ -287,6 +298,12 @@ class Parser
         {
             node = ifStatement();
             advance();
+        }
+        else if (lookahead().type == "BREAK")
+        {
+            advance("BREAK");
+            node = new BreakNode();
+            advance("SEMICOLON");
         }
         else
         {
