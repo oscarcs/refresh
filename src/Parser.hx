@@ -350,7 +350,14 @@ class Parser
 
         // add to symbol table:
         var n = cast(expr, AssignNode);
-        symtab.put(n.left.value, { type:"Dynamic" });
+        if (!symtab.exists(n.left.value))
+        {
+            symtab.put(n.left.value, { type:"Dynamic" });
+        }
+        else
+        {
+            throw 'Identifier ${n.left.value} has already been defined.';
+        }
 
         return expr;
     }
