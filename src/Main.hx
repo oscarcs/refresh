@@ -4,6 +4,7 @@ import Parser;
 import Node;
 import backends.BFGenerator;
 import backends.JSGenerator;
+import backends.WASMGenerator;
 import backends.IGenerator;
 
 class Main
@@ -76,6 +77,10 @@ class Main
                 {
                     // use BF backend:
                     BACKEND = 'bf';
+                }
+                else if (arg == '-wasm') {
+                    // use WebAssembly backend:
+                    BACKEND = 'wasm';
                 }
                 else if (arg == '-t0' || arg == '-t1' || arg == '-t2' || arg == '-t3')
                 {
@@ -151,6 +156,9 @@ class Main
 
                 case 'bf':
                     generator = new BFGenerator(root);
+
+                case 'wasm':
+                    generator = new WASMGenerator(root);
 
                 default:
                     throw 'backend not found';
