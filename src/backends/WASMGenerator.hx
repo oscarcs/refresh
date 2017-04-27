@@ -39,7 +39,7 @@ class WASMGenerator implements IGenerator
     private function generateModule():String
     {
         var str = "";
-        str += '(module)';
+        str += '(module (func (export "main")))';
         return str;
     }
 
