@@ -1,6 +1,8 @@
 package backends;
 
-class WASMGenerator
+import Node;
+
+class WASMGenerator implements IGenerator
 {
     private var rootNode:Node;
 
@@ -11,14 +13,14 @@ class WASMGenerator
 
     public function generate():String
     {
-        var string = '';
-
-        return string;
+        var str = '';
+        str += generateNode(rootNode);
+        return str;
     }
 
     private function generateNode(node:Node):String
     {
-        var string = '';
+        var str:String = '';
 
         if (node == null)
         {
@@ -27,10 +29,18 @@ class WASMGenerator
 
         switch(Type.getClass(node))
         {
-            default:
+            case RootNode:
+                str += generateModule();
         }
 
-        return string;
+        return str;
+    }
+
+    private function generateModule():String
+    {
+        var str = "";
+        str += '(module)';
+        return str;
     }
 
 }
