@@ -14,10 +14,17 @@ class WASMGenerator implements IGenerator
     public function generate():String
     {
         var str = '';
-        str += generateNode(rootNode);
+        str += generateModule(cast rootNode);
         return str;
     }
 
+    /**
+     *  In the WebAssembly backend, generateNode()
+     *  generates expressions for linear WebAssembly instructions
+     *  inside of functions and so forth. 
+     *  @param node - 
+     *  @return String
+     */
     private function generateNode(node:Node):String
     {
         var str:String = '';
@@ -29,17 +36,35 @@ class WASMGenerator implements IGenerator
 
         switch(Type.getClass(node))
         {
-            case RootNode:
-                str += generateModule();
+            default:
         }
 
         return str;
     }
 
-    private function generateModule():String
+    private function generateModule(n:RootNode):String
     {
         var str = "";
-        str += '(module (func (export "main")))';
+        str += '(module \n'; 
+        str += generateFunction("main");
+        //@@TODO: generate other functions
+        str += ')';
+        return str;
+    }
+
+    private function generateFunction(name:String):String
+    {
+        var str = "";
+        str += '(func ' + generateExport(name) + '\n';
+        //@@TODO: generate function body
+        str += ")";
+        return str;
+    }
+
+    private function generateExport(name:String):String
+    {
+        var str = "";
+        str += "(export \"" + name + "\")";
         return str;
     }
 
