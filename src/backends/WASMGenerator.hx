@@ -2,12 +2,12 @@ package backends;
 
 import Node;
 
-typedef W_Param = {
+typedef WasmParam = {
     name:String,
-    type:W_Type
+    type:WasmType
 };
 
-typedef W_Export = {
+typedef WasmExport = {
     // Name of the export, i.e. the name that
     // will be exposed to the calling environment.
     name:String,
@@ -15,7 +15,7 @@ typedef W_Export = {
     reference:String
 };
 
-enum W_Type {
+enum WasmType {
     I32;
 }
 
@@ -26,7 +26,7 @@ class WASMGenerator implements IGenerator
     // Array of exported functions.
     // We defer exporting to the end of the
     // textual representation.
-    private var exports:Array<W_Export> = [];
+    private var exports:Array<WasmExport> = [];
 
     public function new(rootNode:Node)
     {
@@ -89,7 +89,7 @@ class WASMGenerator implements IGenerator
      *  @param args Array of arguments to a function.
      *  @return String
      */
-    private function generateFunction(name:String, args:Array<W_Param>):String
+    private function generateFunction(name:String, args:Array<WasmParam>):String
     {
         //@@TODO: Determine whether this function needs to be exported:
         var isExport:Bool = name == "main";
@@ -126,7 +126,7 @@ class WASMGenerator implements IGenerator
      *  Generate an export for a function.
      *  @param name Name of exported function
      */
-    private function generateExport(export:W_Export):String
+    private function generateExport(export:WasmExport):String
     {
         var str = "";
         str += '(export "' + export.name + '" (func $' + export.reference + '))';
