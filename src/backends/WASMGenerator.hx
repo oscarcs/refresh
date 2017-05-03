@@ -11,8 +11,27 @@ typedef WasmExport = {
     // Name of the export, i.e. the name that
     // will be exposed to the calling environment.
     name:String,
-    // Internal reference name for the 
+    
+    // Internal reference name for the export; the
+    // $-prefixed name.
     reference:String
+};
+
+typedef WasmImport = {
+    // List of string representing name-parts for
+    // the inputs JavaScript name. console.log would
+    // become ["console", "log"]. **Must have at least two
+    // name-parts**.
+    name: Array<String>,
+
+    // Internal reference name for the import; the
+    // $-prefixed name.
+    reference: String,
+
+    // A list of WebAssembly parameters that are passed
+    // to the JavaScript implementation and used for
+    // type-checking.
+    params: Array<WasmParam>
 };
 
 enum WasmType {
@@ -27,6 +46,34 @@ class WASMGenerator implements IGenerator
     // We defer exporting to the end of the
     // textual representation.
     private var exports:Array<WasmExport> = [];
+
+    // Array of predefined imported functions.
+    private var imports:Array<WasmImport> = [
+        {
+            name: ["js", "printInt"],
+            reference: "print_int",
+            params: [
+                {
+                    name: "x",
+                    type: I32
+                }
+            ]
+        },
+        {
+            name: ["js", "printString"],
+            reference: "print_string",
+            params: [
+                {
+                    name: "offset",
+                    type: I32
+                },
+                {
+                    name: "length",
+                    type: I32
+                }
+            ]
+        }
+    ];
 
     public function new(rootNode:Node)
     {
@@ -68,15 +115,21 @@ class WASMGenerator implements IGenerator
     {
         var str = "";
         str += '(module \n'; 
+
+        for (i in imports)
+        {
+            str += generateImport(i) + '\n';
+        }
+
         str += generateFunction("main", []) + '\n';
         
         //@@TODO: generate other functions
 
 
         // Generate exports
-        for (export in exports)
+        for (e in exports)
         {
-            str += generateExport(export) + '\n';
+            str += generateExport(e) + '\n';
         }
 
         str += ')';
@@ -106,7 +159,7 @@ class WASMGenerator implements IGenerator
         str += '\n';
 
         //@@TODO: generate function body
-        
+
         str += ")";
 
         if (isExport)
@@ -117,6 +170,29 @@ class WASMGenerator implements IGenerator
         return str;
     }
 
+    private function generateImport(i:WasmImport):String
+    {
+        var str = "";
+        str += '(import ';
+        for (namepart in i.name)
+        {
+            str += '"${namepart}" ';
+        }
+        str += '(func $' + i.reference;
+        for (param in i.params)
+        {
+            str += ' (param ' + Std.string(param.type).toLowerCase() + ')';
+        }
+        str += '))';
+        return str;
+    }
+
+    /**
+     *  Add an export to the list of exports for
+     *  later code generation.
+     *  @param name Name of export.
+     *  @param reference Internal reference to export. 
+     */
     private function addExport(name:String, reference:String):Void
     {
         this.exports.push({ name: name, reference: reference });
@@ -124,12 +200,12 @@ class WASMGenerator implements IGenerator
 
     /**
      *  Generate an export for a function.
-     *  @param name Name of exported function
+     *  @param name Name of exported function.
      */
-    private function generateExport(export:WasmExport):String
+    private function generateExport(e:WasmExport):String
     {
         var str = "";
-        str += '(export "' + export.name + '" (func $' + export.reference + '))';
+        str += '(export "' + e.name + '" (func $' + e.reference + '))';
         return str;
     }
 
