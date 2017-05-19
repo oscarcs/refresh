@@ -5,7 +5,7 @@ import Node;
 
 typedef Parselet = Token->Node->Node;
 
-class Parser
+class ExpressionParser
 {
     private var tokens:Array<Token>;
     private var pos = -1;
