@@ -1,6 +1,6 @@
 package ;
 
-import Parser;
+import ExpressionParser;
 import Node;
 import backends.BFGenerator;
 import backends.JSGenerator;
@@ -138,7 +138,7 @@ class Main
             }
             
             // parse the code:
-            var parser = new Parser(tokens);
+            var parser = new StatementParser(tokens);
             var root = parser.parse();
             
             // trace the AST:
