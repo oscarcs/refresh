@@ -3,6 +3,12 @@ package ;
 import Lexer;
 import Node;
 
+/**
+ *  This class contains code to parse 'statements', which under 
+ *  the relaxed definition I use here includes the program itself,
+ *  blocks of code, and all semicolon-terminated statements including
+ *  those which do not contain expressions.
+ */
 class StatementParser extends ExpressionParser
 {
     public function new(tokens:Array<Token>)
@@ -15,7 +21,10 @@ class StatementParser extends ExpressionParser
         return program();
     }
 
-    // consisting of "statement-list END":
+    /**
+     *  This function deals with the program structure,
+     *  consisting of a list of statements.
+     */
     private function program():Node
     {
         var nodes:Array<Node> = [];
@@ -28,53 +37,52 @@ class StatementParser extends ExpressionParser
         return new RootNode(nodes);
     }
 
-    // consisting of "block | declaration | expression":
+    /**
+     *  In the grammar for this language, a 'statement' is basically
+     *  'anything that isn't an expression'.
+     */
     private function statement():Node
     {
         var node:Node = null;
-        if (lookahead().type == "L_BRACE")
+        
+        switch (lookahead().type) 
         {
-            node = block();
-            advance("R_BRACE");
-        }
-        else if (lookahead().type == "IDENTIFIER")
-        {
-            node = expression(0);
-            advance("SEMICOLON");
-        }   
-        else if (lookahead().type == "DECLARATION")
-        {
-            node = declaration();
-            advance("SEMICOLON");
-        }
-        else if (lookahead().type == "FUNCTION")
-        {
-            node = functionDeclaration();
-            advance();
-        }
-        else if (lookahead().type == "WHILE")
-        {
-            node = whileLoop();
-            advance();
-        }
-        else if (lookahead().type == "IF")
-        {
-            node = ifStatement();
-            advance();
-        }
-        else if (lookahead().type == "BREAK")
-        {
-            advance("BREAK");
-            node = new BreakNode();
-            advance("SEMICOLON");
-        }
-        else
-        {
-            //@@ERROR
-            throw 'Invalid statement, can\'t start with ${lookahead().type}';
+            case "L_BRACE":
+                node = block();
+                advance("R_BRACE");
+
+            case "IDENTIFIER":
+                node = expression(0);
+                advance("SEMICOLON");
+
+            case "DECLARATION":
+                node = declaration();
+                advance("SEMICOLON");
+
+            case "FUNCTION":
+                node = functionDeclaration();
+                advance();
+
+            case "WHILE":
+                node = whileLoop();
+                advance();
+
+            case "IF":
+                node = ifStatement();
+                advance();
+
+            case "BREAK":
+                advance("BREAK");
+                node = new BreakNode();
+                advance("SEMICOLON");
+
+            default:
+                //@@ERROR
+                throw 'Invalid statement, can\'t start with ${lookahead().type}';
         }
 
-        // check symbol table if we just parsed an assignment:
+        // Check symbol table to see if we just parsed an assignment.
+        // If we did, we need to check that it's in the symbol table:
         if (Std.is(node, AssignNode))
         {
             var n = cast(node, AssignNode);
@@ -102,37 +110,55 @@ class StatementParser extends ExpressionParser
         }
         else
         {
+            //@@ERROR
             throw 'Identifier ${n.left.value} has already been defined.';
         }
 
         return expr;
     }
 
-        // consisting of "{ statement-list }":
+    /**
+     *  A block contains a list of statements. It may possibly be the body of
+     *  another type of statement.
+     */
     private function block():Node
     {
+        // Enter a new scope for the block.
         symtab.push();
 
         advance("L_BRACE");
         var statements:Array<Node> = [];
+
+        // Parse statements until a block-terminator is reached.
         while (lookahead().type != "R_BRACE")
         {
             statements.push(statement());
         }
 
+        // Exit the block scope.
         symtab.pop();
 
         return new BlockNode(statements);
     }
 
+    /**
+     *  Parse the declaration of a new function.
+     *  @return Node
+     */
     private function functionDeclaration():Node
     {
         advance("FUNCTION");
         advance("IDENTIFIER");
         var name = new IdentNode(c.lexeme);
 
+        // The start of the argument-list:
         advance("L_PAREN");
+
+        // The type string
+        //@@TYPECHECKER
+        //@@TODO: better method of representing types
         var type = "";
+
         var args:Array<Node> = [];
         while (true)
         {
@@ -150,7 +176,11 @@ class StatementParser extends ExpressionParser
             if (lookahead().type == "R_PAREN") break;
             advance("COMMA");
         }
+
+        // Denotes the end of the argument-list
         advance("R_PAREN");
+
+        // Parse the type hint following the function header
         if (lookahead().type == "COLON")
         {
             advance("COLON");
@@ -160,6 +190,7 @@ class StatementParser extends ExpressionParser
             type += c.lexeme;
         }
         else {
+
             // Infer the type of the function:
             //@@TYPECHECKER: infer rather than use dynamic
             type += 'Dynamic';
@@ -167,12 +198,16 @@ class StatementParser extends ExpressionParser
 
         var body = block().children;
 
-        // add to the symtab:
+        // Add to the symbol table:
         symtab.put(name.value, { type: type });
         
         return new FunctionNode(name, args, body);
     }
 
+    /**
+     *  While loop statement parser.
+     *  @return Node
+     */
     private function whileLoop():Node
     {
         advance("WHILE");
@@ -185,6 +220,10 @@ class StatementParser extends ExpressionParser
         return new WhileNode(condition, body);
     }
 
+    /**
+     *  Conditional statement parser.
+     *  @return Node
+     */
     private function ifStatement():Node
     {
         advance("IF");
