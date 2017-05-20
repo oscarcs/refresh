@@ -45,20 +45,27 @@ class StatementParser extends ExpressionParser
     {
         var node:Node = null;
         
+        // Check the next token in the stream and determine how to
+        // parse the next statement.
         switch (lookahead().type) 
         {
             case "L_BRACE":
                 node = block();
                 advance("R_BRACE");
 
+            // If the next token is an identifier, the statement must
+            // consist of an assignment-expression.
             case "IDENTIFIER":
                 node = expression(0);
                 advance("SEMICOLON");
 
+            // Here, the DECLARATION type is any keyword that marks the
+            // declaration of a new variable.
             case "DECLARATION":
                 node = declaration();
                 advance("SEMICOLON");
 
+            // Here, the FUNCTION type is any function-declaring keyword.
             case "FUNCTION":
                 node = functionDeclaration();
                 advance();
@@ -71,6 +78,8 @@ class StatementParser extends ExpressionParser
                 node = ifStatement();
                 advance();
 
+            // Parse a break statement, which should just consist
+            // of the keyword followed by a semicolon.
             case "BREAK":
                 advance("BREAK");
                 node = new BreakNode();
@@ -96,14 +105,19 @@ class StatementParser extends ExpressionParser
         return node;
     }
 
-    // consistion of 'let identifier = expression':
+    /**
+     *  Parse a statement containing a variable declaration.
+     *  @return Node
+     */
     private function declaration():Node
     {
         advance("DECLARATION");
         var expr = expression(0);
 
-        // add to symbol table:
         var n = cast(expr, AssignNode);
+
+        // Check if the identifier name exists already in the symbol
+        // table. If it doesn't, add it, otherwise throw an error.
         if (!symtab.exists(n.left.value))
         {
             symtab.put(n.left.value, { type:"Dynamic" });
@@ -154,9 +168,9 @@ class StatementParser extends ExpressionParser
         // The start of the argument-list:
         advance("L_PAREN");
 
-        // The type string
         //@@TYPECHECKER
         //@@TODO: better method of representing types
+        // The type string
         var type = "";
 
         var args:Array<Node> = [];
@@ -210,6 +224,7 @@ class StatementParser extends ExpressionParser
      */
     private function whileLoop():Node
     {
+        // Parse the header of the while statement:
         advance("WHILE");
         advance("L_PAREN");
         var condition = expression(0);
@@ -226,6 +241,7 @@ class StatementParser extends ExpressionParser
      */
     private function ifStatement():Node
     {
+        // Parse the header of the if statement:
         advance("IF");
         advance("L_PAREN");
         var condition = expression(0);
