@@ -11,11 +11,18 @@ class Node
         this.value = value;
     }
 
+    /**
+     *  Check if this node has children.
+     */
     public function hasChildren():Bool
     {
         return this.children.length != 0;
     }
-
+    
+    /**
+     *  Check if this node is the last child of its parent.
+     *  @return Bool
+     */
     public function isLastChild():Bool
     {
         if (this.parent != null)
@@ -26,11 +33,18 @@ class Node
     }
 }
 
-class RootNode extends Node
+/**
+ *  Represents the program itself, containing all the top level children.
+ */
+class ProgramNode extends Node
 {
+    /**
+     *  Create a new ProgramNode.
+     *  @param nodes - An array of child nodes at the program level.
+     */
     override public function new(nodes:Array<Node>)
     {
-        super("ROOT");
+        super("PROGRAM");
         for (node in nodes)
         {
             children.push(node);
@@ -39,6 +53,9 @@ class RootNode extends Node
     }
 }
 
+/**
+ *  Represents an identifier.
+ */
 class IdentNode extends Node
 {
     override public function new(value:String)
@@ -47,6 +64,9 @@ class IdentNode extends Node
     }
 }
 
+/**
+ *  Represents an integer literal.
+ */
 class IntNode extends Node
 {
     override public function new(value:String)
@@ -55,6 +75,9 @@ class IntNode extends Node
     }
 }
 
+/**
+ *  Represents a string literal.
+ */
 class StringNode extends Node
 {
     override public function new(value:String)
@@ -63,6 +86,9 @@ class StringNode extends Node
     }
 }
 
+/**
+ *  Represents a boolean literal.
+ */
 class BooleanNode extends Node
 {
     override public function new(value:String)
@@ -71,10 +97,21 @@ class BooleanNode extends Node
     }
 }
 
+/**
+ *  Represents a variable assignment.
+ */
 class AssignNode extends Node
 {
+    /**
+     *  Left-hand side of the assignment, should be an identifier.
+     */
     public var left:Node;
+    
+    /**
+     *  Right-hand side of the assignment, may be a range of types.
+     */
     public var right:Node;
+    
     override public function new(value:String, left:Node, right:Node)
     {
         super(value);
@@ -87,11 +124,26 @@ class AssignNode extends Node
     }
 }
 
+/**
+ *  Represents a function definition.
+ */
 class FunctionNode extends Node
 {
+    /**
+     *  An identifier; the name of the function.
+     */
     public var name:Node;
+
+    /**
+     *  A list of arguments to the function.
+     */
     public var args:Array<Node> = [];
+
+    /**
+     *  The body of the function, an array of child nodes.
+     */
     public var body:Array<Node> = [];
+
     override public function new(name:Node, args:Array<Node>, body:Array<Node>)
     {
         super(name.value);
@@ -113,6 +165,9 @@ class FunctionNode extends Node
     }
 }
 
+/**
+ *  Represents a prefix operator.
+ */
 class PrefixNode extends Node
 {
     public var child:Node;
@@ -125,6 +180,9 @@ class PrefixNode extends Node
     }
 }
 
+/**
+ *  Represents an infix operator.
+ */
 class InfixNode extends Node
 {
     public var left:Node;
@@ -141,6 +199,9 @@ class InfixNode extends Node
     }
 }
 
+/**
+ *  Represents a postfix operator.
+ */
 class PostfixNode extends Node
 {
     public var child:Node;
@@ -153,10 +214,21 @@ class PostfixNode extends Node
     }
 }
 
+/**
+ *  Represents a function call.
+ */
 class CallNode extends Node
 {
+    /**
+     *  Identifier of the function to be called.
+     */
     public var name:Node;
+
+    /**
+     *  List of arguments to pass to the function.
+     */
     public var args:Array<Node> = [];
+
     override public function new(name:Node, args:Array<Node>)
     {
         super(name.value);
@@ -172,6 +244,9 @@ class CallNode extends Node
     }
 }
 
+/**
+ *  Represents a block of code.
+ */
 class BlockNode extends Node
 {
     override public function new(statements:Array<Node>)
@@ -185,10 +260,22 @@ class BlockNode extends Node
     }
 }
 
+/**
+ *  Represents a while loop.
+ */
 class WhileNode extends Node
 {
+    /**
+     *  The condition of the while loop, an expression to be evaluated
+     *  every time the while loop runs.
+     */
     public var condition:Node;
+
+    /**
+     * The body of the while loop, an array of child nodes. 
+     */
     public var body:Array<Node> = [];
+    
     override public function new(condition:Node, statements:Array<Node>)
     {
         super("WHILE");
@@ -206,10 +293,21 @@ class WhileNode extends Node
     }
 }
 
+/**
+ *  Represents an if statement.
+ */
 class IfNode extends Node
 {
+    /**
+     *  The condition of the if statement.
+     */
     public var condition:Node;
+
+    /**
+     *  The body of the if statement, an array of child nodes.
+     */
     public var body:Array<Node> = [];
+
     override public function new(condition:Node, statements:Array<Node>)
     {
         super("IF");
@@ -227,6 +325,9 @@ class IfNode extends Node
     }
 }
 
+/**
+ *  A break statement. Prematurely exits a loop.
+ */
 class BreakNode extends Node
 {
     override public function new()

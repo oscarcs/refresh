@@ -5,7 +5,7 @@ import Symtab;
 
 class JSGenerator implements IGenerator
 {
-    private var rootNode:Node;
+    private var programNode:Node;
 
     private var symtab = new Symtab();
     private var operators:Map<String, String> = [
@@ -33,16 +33,16 @@ class JSGenerator implements IGenerator
 
     private var indentLevel:Int = 0;
 
-    public function new(rootNode:Node)
+    public function new(programNode:Node)
     {
-        this.rootNode = rootNode;
+        this.programNode = programNode;
     }
 
     public function generate():String
     {
         var string = '';
 
-        string += generateNode(rootNode);
+        string += generateNode(programNode);
 
         return string;
     }
@@ -58,7 +58,7 @@ class JSGenerator implements IGenerator
 
         switch(Type.getClass(node))
         {
-            case RootNode:
+            case ProgramNode:
                 str += generateChildren(node.children);
 
             case AssignNode:

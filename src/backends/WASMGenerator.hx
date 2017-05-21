@@ -40,7 +40,7 @@ enum WasmType {
 
 class WASMGenerator implements IGenerator
 {
-    private var rootNode:Node;
+    private var programNode:Node;
 
     // Array of exported functions.
     // We defer exporting to the end of the
@@ -75,15 +75,15 @@ class WASMGenerator implements IGenerator
         }
     ];
 
-    public function new(rootNode:Node)
+    public function new(programNode:Node)
     {
-        this.rootNode = rootNode;
+        this.programNode = programNode;
     }
 
     public function generate():String
     {
         var str = '';
-        str += generateModule(cast rootNode);
+        str += generateModule(cast programNode);
         return str;
     }
 
@@ -111,7 +111,7 @@ class WASMGenerator implements IGenerator
         return str;
     }
 
-    private function generateModule(n:RootNode):String
+    private function generateModule(n:ProgramNode):String
     {
         var str = "";
         str += '(module \n'; 

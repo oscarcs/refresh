@@ -34,7 +34,7 @@ class StatementParser extends ExpressionParser
             node = statement();
             nodes.push(node);
         };
-        return new RootNode(nodes);
+        return new ProgramNode(nodes);
     }
 
     /**
