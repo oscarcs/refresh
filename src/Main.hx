@@ -1,6 +1,5 @@
 package ;
 
-import ExpressionParser;
 import Node;
 import backends.BFGenerator;
 import backends.JSGenerator;
@@ -50,23 +49,22 @@ class Main
 
     static function compile()
     {
-        var COMPILE:Bool = true;
         var DEFAULT_INPUT_PATH:String = "test/lex.prog";
         var INPUT_PATH:String = null;
         var DEFAULT_OUTPUT_PATH:String = "test/lex.js";
         var OUTPUT_PATH:String = null;
-        var TRACE_LEVEL:Int = 0; // 0-3
+        var DEBUG_TRACE:Bool = false;
         var BACKEND:String = 'js';
 
         var args = CLI.getArgs();
-        if (args != null)
+        if (args.length > 0)
         {
             var hasInputPath:Bool = false;
             for (arg in args)
             {
                 if (arg == '-h' || arg == '--help') {
                     printHelp();
-                    COMPILE = false;
+                    return;
                 }
                 else if (arg == '-js')
                 {
@@ -82,9 +80,9 @@ class Main
                     // use WebAssembly backend:
                     BACKEND = 'wasm';
                 }
-                else if (arg == '-t0' || arg == '-t1' || arg == '-t2' || arg == '-t3')
+                else if (arg == '--debug')
                 {
-                    TRACE_LEVEL = Std.parseInt(arg.substring(2));
+                    DEBUG_TRACE = true;
                 }
                 else if (Files.exists(arg))
                 {
@@ -105,77 +103,68 @@ class Main
             }
         }
         else {
-            // use default settings:
-            if (Files.exists(DEFAULT_INPUT_PATH))
-            {
-                INPUT_PATH = DEFAULT_INPUT_PATH;
-            }
-            OUTPUT_PATH = DEFAULT_OUTPUT_PATH;
-            TRACE_LEVEL = 3; // max trace level
-            BACKEND = 'js';
+            trace("Refresh Compiler: refresh --help for help.");
+            return;
         }
 
         if (INPUT_PATH == null) INPUT_PATH = DEFAULT_INPUT_PATH;
         if (OUTPUT_PATH == null) OUTPUT_PATH = DEFAULT_OUTPUT_PATH;
 
-        if (COMPILE)
+        // Read in the file:
+        var data = Files.read(INPUT_PATH);
+        
+        // Perform lexical analysis on the program text:
+        var lexer = new Lexer(data);
+        var tokens = lexer.lex();
+        
+        // Parse the program text:
+        var parser = new StatementParser(tokens);
+        var root = parser.parse();
+
+        // Generate output:
+        var generator:IGenerator;
+        switch (BACKEND)
         {
-            // read in the file:
-            var data = Files.read(INPUT_PATH);
-            
-            // lex the code:
-            var lexer = new Lexer(data);
-            var tokens = lexer.lex();
+            case 'js':
+                generator = new JSGenerator(root);
 
-            // trace the tokens:
-            if (TRACE_LEVEL >= 2)
+            case 'bf':
+                generator = new BFGenerator(root);
+
+            case 'wasm':
+                generator = new WASMGenerator(root);
+
+            default:
+                throw 'backend not found';
+        }        
+        var output = generator.generate();
+
+        // If the 'debug trace' flag is set, trace some of the internal compiler
+        // variables for compiler debugging purposes.
+        if (DEBUG_TRACE)
+        {
+            // Output the Tokens:
+            trace('TOKENS:\n');
+            for (token in tokens)
             {
-                for (token in tokens)
-                {
-                    trace('Ln ${token.line}, Col ${token.pos}: ${token.type} (${token.lexeme})');
-                }
-                trace('');
+                trace('Ln ${token.line}, Col ${token.pos}: ${token.type} (${token.lexeme})');
             }
+            trace('');
             
-            // parse the code:
-            var parser = new StatementParser(tokens);
-            var root = parser.parse();
-            
-            // trace the AST:
-            if (TRACE_LEVEL >= 2)
-            {
-                trace(root);
-            }
+            // Output the AST:
+            trace('ABSTRACT SYNTAX TREE:\n');
+            trace(root);
+            trace('');
 
-            // generate the code:
-            var generator:IGenerator;
-            switch (BACKEND)
-            {
-                case 'js':
-                    generator = new JSGenerator(root);
-
-                case 'bf':
-                    generator = new BFGenerator(root);
-
-                case 'wasm':
-                    generator = new WASMGenerator(root);
-
-                default:
-                    throw 'backend not found';
-            }        
-            var output = generator.generate();
-            
-            // trace the generated code:
-            if (TRACE_LEVEL >= 3)
-            {
-                trace('_______ \'${OUTPUT_PATH}\': ________________________________________');
-                trace(output);
-            }
-
-            //@@TODO: check the output directory exists
-            // output the generated code:
-            Files.write(OUTPUT_PATH, output);
+            // Output the generated code:
+            trace('CODE OUTPUT TO ${OUTPUT_PATH}:\n');
+            trace(output);
+            trace('________________________________________________________________________________');
         }
+
+        //@@TODO: Check the output directory exists
+        // Write out the generated code to a file:
+        Files.write(OUTPUT_PATH, output);
     }
 
     static function printHelp()
@@ -184,8 +173,8 @@ class Main
         trace("(Pre-alpha)\n");
         trace("Usage: refresh [options] file_in file_out");
         trace("Options:");
-        trace("--help, -h:\t\t Display help.");
-        trace("-t0, -t1, -t2, -t3:\t Set the trace level.");
+        trace("--help, -h: \t\tDisplay help.");
+        trace("--debug: \t\tDump internal compiler variables for debugging the compiler.");
     }
 
     static function stringifyBFVar(bfvar:BFVar):String
