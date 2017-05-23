@@ -15,7 +15,7 @@ WebAssembly code is divided into modules, which are compiled and run inside the 
 )
 ```
 However, WebAssembly is internally a stack machine, and so functions must be defined before they are used, like so:
-```
+``` WebAssembly
 (func $getAnswer (result i32)
     i32.const 42
 )
