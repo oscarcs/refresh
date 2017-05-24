@@ -1,7 +1,6 @@
 package ;
 
 import Node;
-import backends.BFGenerator;
 import backends.JSGenerator;
 import backends.WASMGenerator;
 import backends.IGenerator;
@@ -22,14 +21,6 @@ class Main
             else if (Std.is(v, Node))
             {
                 _trace(stringifyNodeRecurse(v), null);
-            }
-            else if (Std.is(v, { isPointer:Bool, value:Int }))
-            {
-                _trace(stringifyBFVar(v), null);
-            }
-            else if (Std.is(v, BFLinearExpr))
-            {
-                _trace(stringifyBFLinearExpr(v), null);
             }
             else
             {
@@ -70,11 +61,6 @@ class Main
                 {
                     // use JS backend:
                     BACKEND = 'js';
-                }
-                else if (arg == '-bf')
-                {
-                    // use BF backend:
-                    BACKEND = 'bf';
                 }
                 else if (arg == '-wasm') {
                     // use WebAssembly backend:
@@ -128,9 +114,6 @@ class Main
             case 'js':
                 generator = new JSGenerator(root);
 
-            case 'bf':
-                generator = new BFGenerator(root);
-
             case 'wasm':
                 generator = new WASMGenerator(root);
 
@@ -175,21 +158,6 @@ class Main
         trace("Options:");
         trace("--help, -h: \t\tDisplay help.");
         trace("--debug: \t\tDump internal compiler variables for debugging the compiler.");
-    }
-
-    static function stringifyBFVar(bfvar:BFVar):String
-    {
-        var str = '';
-        str += bfvar.isPointer ? '*' : '';
-        str += bfvar.value;
-        return str;
-    }
-
-    static function stringifyBFLinearExpr(expr:BFLinearExpr):String
-    {
-        var str = '';
-        str += '${stringifyBFVar(expr.lvalue)} = ${stringifyBFVar(expr.left)} ${expr.op} ${stringifyBFVar(expr.right)};';
-        return str;
     }
 
     static function stringifyNodeRecurse(root:Node):String
