@@ -2,7 +2,7 @@
 
 The compiler features a WebAssembly backend. This document provides some notes on basic WebAssembly concepts which may be generally useful.
 
-## Modules and functions
+### Modules and functions
 
 WebAssembly code is divided into modules, which are compiled and run inside the wrapping interface (we are developing using Node). These modules contain functions, which can be defined and called in a manner similar to a high-level programming language:
 ``` WebAssembly
